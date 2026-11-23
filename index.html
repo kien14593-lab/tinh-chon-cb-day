@@ -121,7 +121,7 @@ const RHO=0.0225;   // Ω·mm²/m – điện trở suất đồng ở nhiệt �
 const XL=0.00008;   // Ω/m – cảm kháng dây
 const ENCL=[4,6,8,12,18,24,36,48,72];
 
-const DEF_SET={U1:220,U3:380,temp:35,kgrp:1,kDev:1.25,kBr:1.2,kMain:1.15,dUdev:3,dUbr:1.5,dUmain:1,dUtot:5,waste:10,th3p:63,minSdev:1.5,minSfeed:2.5,minCB:10,vnRule:1,cbMax1P:63,kdtLo:0.6,kdtHi:0.8};
+const DEF_SET={U1:220,U3:380,temp:35,kgrp:1,kDev:1.25,kBr:1.2,kMain:1.15,dUdev:3,dUbr:1.5,dUmain:1,dUtot:5,waste:10,th3p:63,minSdev:1.5,minSfeed:2.5,minCB:10,vnRule:1,cbMax1P:63,kdtLo:0.6,kdtHi:0.8,pipeLen:2.92,clampPerM:1,elbowPerPt:2,jbPerPt:0.35,swRatio:0.5,cosMinS:4,spd:1,earth:1,rods:3,bareS:25,bareLen:10,earthLen:10,auxPct:5};
 const SET_META=[
  ['U1','Điện áp pha (V)',1],['U3','Điện áp dây 3 pha (V)',1],
  ['temp','Nhiệt độ môi trường (°C)','sel'],['kgrp','Hệ số nhóm mạch đi chung ống/máng',0.05],
@@ -131,6 +131,12 @@ const SET_META=[
  ['minCB','CB nhỏ nhất dùng cho lộ thiết bị (A)','cbsel'],['vnRule','Quy tắc thực tế: CB ≥ 16A dùng dây CV ≥ 2,5mm²','yn'],
  ['cbMax1P','CB tổng tối đa khi cấp 1 pha (A) – theo CB điện lực tại công tơ','cbmax'],['kdtLo','Hệ số đồng thời tủ nhánh – cận dưới',0.05],['kdtHi','Hệ số đồng thời tủ nhánh – cận trên',0.05],
  ['th3p','Ngưỡng khuyến nghị cấp 3 pha (A)',1],['waste','Hao hụt vật tư dây/ống (%)',1]
+];
+const BOM_META=[
+ ['pipeLen','Chiều dài 1 cây ống (m) → số khớp nối',0.01],['clampPerM','Kẹp đỡ ống (cái/m ống)',0.1],['elbowPerPt','Co/cút (cái/điểm)',0.5],
+ ['jbPerPt','Hộp nối (cái/điểm, tối thiểu 1/lộ)',0.05],['swRatio','Công tắc (cái/điểm đèn)',0.05],['cosMinS','Bóc đầu cos từ tiết diện (mm²)','secsel2'],
+ ['spd','Chống sét lan truyền SPD ở tủ tổng','yn2'],['earth','Bóc hệ tiếp địa','yn2'],['rods','Số cọc tiếp địa',1],['bareS','Cáp đồng trần / dây tiếp địa (mm²)',1],
+ ['bareLen','Chiều dài cáp đồng trần nối cọc (m)',1],['earthLen','Dây tiếp địa từ cọc → tủ tổng (m)',1],['auxPct','Vật tư phụ (% tiền vật tư chính)',1]
 ];
 
 /* ===================== THƯ VIỆN MẶC ĐỊNH ===================== */
@@ -191,7 +197,7 @@ function defLib(){return DEF_LIB.map((r,i)=>({id:'D'+String(i+1).padStart(3,'0')
 function sampleProject(lib){
  const id=n=>{const d=lib.find(x=>x.name===n);return d?d.id:'';};
  const L=(n,len,q)=>({id:uid(),devId:id(n),qty:q||1,len:len});
- return {name:'Nhà mẫu 2 tầng (từ file Excel)',supply:'1P',kdt:0.75,len:15,boards:[
+ return {name:'Nhà mẫu 2 tầng (từ file Excel)',supply:'1P',kdt:0.44,len:15,boards:[
   {id:uid(),name:'Tủ Tầng 1 - Phòng khách',kdt:0.7,len:10,phase:'A',loads:[L('Chiếu sáng tầng / phòng',15),L('Ổ cắm phòng khách / ngủ',18),L('Điều hòa 24000 BTU',12),L('Máy bơm nước dân dụng',20),L('Chiếu sáng phụ / cầu thang / sự cố',15)]},
   {id:uid(),name:'Tủ Tầng 1 - Phòng bếp',kdt:0.75,len:12,phase:'B',loads:[L('Bếp từ đôi / ba vùng nấu',8),L('Lò nướng + Lò vi sóng',8),L('Bình nước nóng gián tiếp 30L',10),L('Ổ cắm khu vực bếp',12)]},
   {id:uid(),name:'Tủ Phòng ngủ 1',kdt:0.7,len:18,phase:'C',loads:[L('Chiếu sáng tầng / phòng',12),L('Đèn sân vườn / ngoài trời',20),L('Ổ cắm phòng khách / ngủ',15),L('Điều hòa 12000 BTU',10),L('Bình nước nóng gián tiếp 30L',8),L('Đèn sưởi nhà tắm 3 bóng',8)]},
@@ -205,7 +211,7 @@ function sampleProject(lib){
 const KEY='dien-dan-dung-v1';
 let S;
 function uid(){return 'x'+Math.random().toString(36).slice(2,10);}
-function fresh(){const lib=defLib();return {settings:{...DEF_SET},library:lib,project:sampleProject(lib)};}
+function fresh(){const lib=defLib();return {settings:{...DEF_SET},library:lib,project:sampleProject(lib),prices:{}};}
 function load(){try{const t=localStorage.getItem(KEY);if(t){const o=JSON.parse(t);if(o&&o.project&&o.library){o.settings={...DEF_SET,...o.settings};return o;}}}catch(e){}return fresh();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 S=load();
@@ -326,26 +332,58 @@ function compute(){
 }
 
 /* ===================== VẬT TƯ ===================== */
-function bom(R){
- const w=1+(+ST().waste||0)/100,cb={},cv={},cvv={},con={},encl={};
- const add=(m,k,q,where)=>{if(!m[k])m[k]={q:0,w:new Set()};m[k].q+=q;if(where)m[k].w.add(where);};
- const M=R.main,pr=S.project;
- if(M.In)add(cb,M.cb,1,'Tủ tổng');
- if(M.S){add(cvv,(M.three?'CVV 4×':'CVV 2×')+fmt(M.S),(+pr.len||0)*w);add(cv,M.PE,(+pr.len||0)*w);add(con,M.conduit,(+pr.len||0)*w);}
- if(M.encl)add(encl,'Tủ điện tổng ≥ '+M.encl+' module',1);
+const ACC={light:'Chiếu sáng (đèn + công tắc)',socket:'Ổ cắm đôi 3 chấu',socketWet:'Ổ cắm chống nước IP44',direct:'Đấu trực tiếp (hộp đấu nối)',none:'Không (dùng qua ổ cắm)'};
+function defAcc(name,group){
+ const n=name.toLowerCase();
+ if(/nồi cơm|ấm siêu|bàn là|sưởi dầu|hút ẩm|tivi|máy tính/.test(n))return ['none',0];
+ if(/sân vườn/.test(n))return ['light',4];
+ if(/sưởi nhà tắm|quạt/.test(n))return ['direct',1];
+ if(group==='Chiếu sáng')return ['light',6];
+ if(/wc|ban công|xe máy/.test(n))return ['socketWet',/xe máy/.test(n)?1:2];
+ if(/ổ cắm khu vực bếp/.test(n))return ['socket',5];
+ if(/ổ cắm/.test(n))return ['socket',6];
+ if(/hút mùi|tủ lạnh|lọc nước|chạy bộ/.test(n))return ['socket',1];
+ return ['direct',1];
+}
+function accOf(d){if(!d)return ['none',0];if(d.acc)return [d.acc,+d.pts||0];return defAcc(d.name||'',d.group||'');}
+const BOM_CAT={A:'A. Thiết bị đóng cắt & bảo vệ',B:'B. Tủ điện & phụ kiện tủ',C:'C. Dây, cáp & đầu cos',D:'D. Ống luồn & phụ kiện ống',E:'E. Thiết bị đầu cuối & hộp nối',F:'F. Tiếp địa & chống sét'};
+function bom(R,only){
+ const st=ST(),w=1+(+st.waste||0)/100,items={};
+ const add=(cat,name,unit,q,where)=>{if(!(q>0))return;const k=cat+'|'+name;if(!items[k])items[k]={cat,name,unit,q:0,w:new Set()};items[k].q+=q;if(where)items[k].w.add(where);};
+ const pipe=(size,m,where)=>{if(!(m>0))return;const L=m*w;add('D','Ống PVC cứng '+size,'m',L,where);
+  add('D','Khớp nối trơn '+size,'Cái',Math.ceil(L/(+st.pipeLen||2.92)),where);add('D','Kẹp đỡ ống '+size,'Cái',Math.ceil(m*(+st.clampPerM||0)),where);};
+ const cos=(S_,n,where)=>{if(S_>=+st.cosMinS)add('C','Đầu cos đồng '+fmt(S_)+' mm²','Cái',n,where);};
+ const encl=(mod,label,where)=>{add('B',label+' ≥ '+mod+' module','Cái',1,where);add('B','Cầu đấu / thanh cái trung tính N','Bộ',1,where);add('B','Cầu đấu / thanh cái tiếp địa PE','Bộ',1,where);add('B','Nhãn lộ + máng/ruột gà trong tủ (bộ)','Bộ',1,where);};
+ const M=R.main,pr=S.project,three=pr.supply==='3P';
+ if(!only){
+  const nm='Tủ tổng';
+  if(M.In)add('A',M.cb,'Cái',1,nm);
+  if(M.S){const L=+pr.len||0;add('C',(three?'Cáp CVV 4×':'Cáp CVV 2×')+fmt(M.S)+' mm²','m',L*w,'Cáp nguồn');add('C','Dây CV '+fmt(M.PE)+' mm² – PE (vàng-xanh)','m',L*w,'Cáp nguồn');
+   pipe(M.conduit,L,'Cáp nguồn');cos(M.S,(three?4:2)*2,nm);cos(M.PE,2,nm);}
+  if(M.encl)encl(M.encl,'Vỏ tủ điện tổng',nm);
+  if(+st.spd){add('F',three?'Chống sét lan truyền SPD 4P (Type 2)':'Chống sét lan truyền SPD 2P (Type 2)','Cái',1,nm);add('A',(three?'MCB 4P':'MCB 2P')+' 32A (bảo vệ SPD)','Cái',1,nm);}
+  if(+st.earth){add('F','Cọc tiếp địa thép mạ đồng D16 L=2,4m','Cọc',+st.rods,'Hệ tiếp địa');add('F','Cáp đồng trần C'+st.bareS+' (nối cọc)','m',+st.bareLen,'Hệ tiếp địa');
+   add('F','Mối hàn hóa nhiệt','Mối',+st.rods,'Hệ tiếp địa');add('F','Hộp kiểm tra tiếp địa','Cái',1,'Hệ tiếp địa');add('C','Dây CV '+st.bareS+' mm² – PE (vàng-xanh)','m',(+st.earthLen||0)*w,'Hệ tiếp địa');}
+ }
  for(const rb of R.boards){
-  const nm=rb.b.name;
-  if(rb.In)add(cb,rb.cb,2,'Tủ tổng + đầu '+nm);
-  if(rb.S){const L=(+rb.b.len||0)*w;add(cvv,'CVV 2×'+fmt(rb.S),L);add(cv,rb.PE,L);add(con,rb.conduit,L);}
-  if(rb.Pd>0)add(encl,'Tủ điện nhánh ≥ '+rb.encl+' module',1,nm);
+  const b=rb.b,nm=b.name;if(only&&only!==b.id)continue;
+  if(rb.In){add('A',rb.cb,'Cái',only?1:2,only?nm:'Tủ tổng + đầu '+nm);}
+  if(rb.S){const L=+b.len||0;add('C','Cáp CVV 2×'+fmt(rb.S)+' mm²','m',L*w,nm);add('C','Dây CV '+fmt(rb.PE)+' mm² – PE (vàng-xanh)','m',L*w,nm);pipe(rb.conduit,L,nm);cos(rb.S,4,nm);cos(rb.PE,2,nm);}
+  if(rb.Pd>0)encl(rb.encl,'Vỏ tủ điện nhánh',nm);
   for(const r of rb.loads){
-   if(r.In)add(cb,r.cb,1,nm);
-   if(r.S){const L=(+r.ld.len||0)*w;add(cv,r.S,2*L);add(cv,r.PE,L);add(con,r.conduit,L);}
+   if(r.In)add('A',r.cb,'Cái',1,nm);
+   if(r.S){const L=+r.ld.len||0;add('C','Dây CV '+fmt(r.S)+' mm² – pha (đỏ)','m',L*w,nm);add('C','Dây CV '+fmt(r.S)+' mm² – trung tính (xanh/đen)','m',L*w,nm);add('C','Dây CV '+fmt(r.S)+' mm² – PE (vàng-xanh)','m',L*w,nm);pipe(r.conduit,L,nm);cos(r.S,6,nm);}
+   const [acc,dp]=accOf(r.d),pts=r.ld.pts!=null&&r.ld.pts!==''?+r.ld.pts:dp;
+   if(!r.d||acc==='none'||!(pts>0))continue;
+   if(r.conduit)add('D','Co / cút '+r.conduit,'Cái',Math.ceil(pts*(+st.elbowPerPt||0)),nm);
+   if(acc==='light'){add('E','Điểm đèn (đấu nối, đui/đế đèn)','Điểm',pts,nm);const sw=Math.ceil(pts*(+st.swRatio||0));add('E','Công tắc 1 chiều 16A + mặt','Cái',sw,nm);add('E','Đế âm tường (công tắc/ổ cắm)','Cái',sw,nm);add('E','Hộp nối dây âm trần/âm tường','Cái',Math.max(1,Math.ceil(pts*(+st.jbPerPt||0))),nm);}
+   else if(acc==='socket'){add('E','Ổ cắm đôi 3 chấu 16A + mặt','Cái',pts,nm);add('E','Đế âm tường (công tắc/ổ cắm)','Cái',pts,nm);add('E','Hộp nối dây âm trần/âm tường','Cái',Math.max(1,Math.ceil(pts*(+st.jbPerPt||0))),nm);}
+   else if(acc==='socketWet'){add('E','Ổ cắm 3 chấu có nắp chống nước IP44','Cái',pts,nm);add('E','Đế âm tường (công tắc/ổ cắm)','Cái',pts,nm);}
+   else if(acc==='direct'){add('E','Hộp đấu nối thiết bị / ổ cắm công suất','Cái',pts,nm);}
   }
  }
- return {cb,cv,cvv,con,encl};
+ return Object.values(items).sort((a,b)=>a.cat.localeCompare(b.cat)||a.name.localeCompare(b.name,'vi',{numeric:true}));
 }
-
 /* ===================== TIỆN ÍCH ===================== */
 function fmt(x,d){if(x==null||isNaN(x))return '';if(d==null)return String(+(+x).toFixed(2)).replace('.',',');return (+x).toLocaleString('vi-VN',{minimumFractionDigits:d,maximumFractionDigits:d});}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -401,11 +439,12 @@ function renderDesign(R){
    status(rb.msgs.concat(...rb.loads.map(r=>r.msgs.filter(m=>m[0]!=='i'))))+'<span style="flex:1"></span>'+
    '<button class="sm noprint" data-act="up" data-b="'+b.id+'">▲</button><button class="sm noprint" data-act="down" data-b="'+b.id+'">▼</button>'+
    '<button class="sm noprint" data-act="dupB" data-b="'+b.id+'">Nhân bản</button><button class="sm del noprint" data-act="delB" data-b="'+b.id+'">Xóa tủ</button></div><div class="bd">';
-  h+='<div class="tw"><table><thead><tr><th>#</th><th>Thiết bị</th><th class="n">SL</th><th class="n">Dài (m)</th><th class="n">P (W)</th><th class="n">Itt (A)</th><th>CB thiết bị</th><th>Dây dẫn</th><th>Ống</th><th class="n">ΔU lộ</th><th class="n">ΔU tổng</th><th>Ghi chú / cảnh báo</th><th class="noprint"></th></tr></thead><tbody>';
+  h+='<div class="tw"><table><thead><tr><th>#</th><th>Thiết bị</th><th class="n">SL</th><th class="n">Dài (m)</th><th class="n" title="Số ổ cắm / số đèn / số thiết bị trên lộ – dùng để bóc vật tư">Số điểm</th><th class="n">P (W)</th><th class="n">Itt (A)</th><th>CB thiết bị</th><th>Dây dẫn</th><th>Ống</th><th class="n">ΔU lộ</th><th class="n">ΔU tổng</th><th>Ghi chú / cảnh báo</th><th class="noprint"></th></tr></thead><tbody>';
   rb.loads.forEach((r,i)=>{const ld=r.ld;
    h+='<tr><td class="c">'+(i+1)+'</td><td>'+devSelect('l.dev.'+ld.id,ld.devId,'data-f="l.devId" data-b="'+b.id+'" data-l="'+ld.id+'"')+'</td>'+
     '<td class="n">'+num('l.qty.'+ld.id,ld.qty,'data-f="l.qty" data-b="'+b.id+'" data-l="'+ld.id+'" style="width:52px"',1)+'</td>'+
     '<td class="n">'+num('l.len.'+ld.id,ld.len,'data-f="l.len" data-b="'+b.id+'" data-l="'+ld.id+'" style="width:58px"',1)+'</td>'+
+    '<td class="n">'+(()=>{const [ac,dp]=accOf(r.d);return ac==='none'||!r.d?'<span class="hint" title="'+esc(ACC.none)+'">—</span>':num('l.pts.'+ld.id,(ld.pts!=null&&ld.pts!=='')?ld.pts:dp,'data-f="l.pts" data-b="'+b.id+'" data-l="'+ld.id+'" style="width:48px" title="'+esc(ACC[ac])+'"',1);})()+'</td>'+
     '<td class="n">'+fmt(r.P,0)+'</td><td class="n">'+fmt(r.Ib,2)+'</td>'+
     '<td class="res">'+esc(r.cb||'—')+'</td><td class="res">'+esc(r.wire||'—')+'</td><td>'+(r.conduit||'')+'</td>'+
     '<td class="n">'+(r.du!=null?fmt(r.du,2)+'%':'')+'</td><td class="n">'+(r.duTot!=null?fmt(r.duTot,2)+'%':'')+'</td>'+
@@ -457,37 +496,52 @@ function renderResult(R){
   rows.map(r=>'<tr'+(r[0].startsWith('Tủ tổng')?' style="background:#f3f7fd;font-weight:bold"':'')+'>'+r.map((c,i)=>'<td'+([2,3,4,5,9,10,11].includes(i)?' class="n"':'')+'>'+esc(c)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div></div>';
 }
 
-/* ===================== VẬT TƯ ===================== */
-function bomRows(B){
- const out=[],sortK=(a,b)=>parseFloat(a.replace(/[^\d.]/g,''))-parseFloat(b.replace(/[^\d.]/g,''));
- const cbKeys=Object.keys(B.cb).sort((a,b)=>a.split(' ')[0].localeCompare(b.split(' ')[0])||(parseFloat(a.match(/(\d+)A/)[1])-parseFloat(b.match(/(\d+)A/)[1])));
- cbKeys.forEach(k=>out.push(['Aptomat',k,'Cái',B.cb[k].q,[...B.cb[k].w].join(', ')]));
- Object.keys(B.encl).sort().forEach(k=>out.push(['Vỏ tủ điện',k,'Cái',B.encl[k].q,[...B.encl[k].w].join(', ')]));
- Object.keys(B.cvv).sort((a,b)=>{const f=k=>{const m=k.match(/(\d)×([\d,]+)/);return +m[1]*1000+parseFloat(m[2].replace(',','.'));};return f(a)-f(b);}).forEach(k=>out.push(['Cáp',k+' mm²','m',Math.ceil(B.cvv[k].q),'Cáp nguồn / cáp trục']));
- Object.keys(B.cv).sort((a,b)=>a-b).forEach(k=>out.push(['Dây đơn','CV '+fmt(+k)+' mm²','m',Math.ceil(B.cv[k].q),'Pha + trung tính + PE']));
- Object.keys(B.con).sort(sortK).forEach(k=>out.push(['Ống luồn','Ống PVC cứng '+k,'m',Math.ceil(B.con[k].q),'']));
- return out;
+/* ===================== VẬT TƯ (hiển thị) ===================== */
+let bomFilter='';
+const price=n=>+((S.prices||{})[n]||0);
+function bomTable(items){
+ const st=ST();let rows=[],sum=0,i=0,cat='';
+ for(const it of items){
+  if(it.cat!==cat){cat=it.cat;rows.push({h:BOM_CAT[cat]});}
+  const q=it.unit==='m'?Math.ceil(it.q):Math.ceil(it.q-1e-9),pr=price(it.name),tt=q*pr;sum+=tt;
+  rows.push({i:++i,cat:BOM_CAT[cat],name:it.name,unit:it.unit,q,pr,tt,w:[...it.w].join(', ')});
+ }
+ const aux=sum*(+st.auxPct||0)/100;
+ return {rows,sum,aux,total:sum+aux};
 }
 function renderBOM(R){
- const rows=bomRows(bom(R));
- return '<div class="card"><div class="hd"><h3>Bảng tổng hợp vật tư</h3><span class="hint">Đã cộng hao hụt '+ST().waste+'% cho dây và ống. CB nhánh tính 2 cái/lộ (tại tủ tổng + đầu tủ nhánh).</span></div><div class="bd tw"><table><thead><tr><th>#</th><th>Nhóm</th><th>Quy cách</th><th>ĐVT</th><th class="n">Số lượng</th><th>Vị trí</th></tr></thead><tbody>'+
-  rows.map((r,i)=>'<tr><td class="c">'+(i+1)+'</td><td>'+esc(r[0])+'</td><td><b>'+esc(r[1])+'</b></td><td>'+r[2]+'</td><td class="n">'+fmt(r[3],0)+'</td><td style="font-size:11.5px">'+esc(r[4])+'</td></tr>').join('')+
-  '</tbody></table><p class="hint">Chưa gồm: thiết bị chống sét lan truyền (SPD), cầu đấu, thanh cái, cọc tiếp địa, hộp nối, phụ kiện ống.</p></div></div>';
+ const st=ST(),T=bomTable(bom(R,bomFilter)),hasP=T.sum>0;
+ const opt='<select data-k="bomf" data-f="bomFilter"><option value="">Toàn bộ công trình</option>'+S.project.boards.map(b=>'<option value="'+b.id+'"'+(b.id===bomFilter?' selected':'')+'>'+esc(b.name)+'</option>').join('')+'</select>';
+ let h='<div class="card"><div class="hd"><h3>Bảng bóc tách vật tư</h3>'+opt+'<span class="hint">Dây/ống đã cộng hao hụt '+st.waste+'%. '+(bomFilter?'Đang xem riêng 1 tủ (CB nhánh tính 1 cái ở đầu tủ).':'CB nhánh tính 2 cái/lộ (tại tủ tổng + đầu tủ nhánh).')+'</span></div><div class="bd tw">'+
+  '<table><thead><tr><th>#</th><th>Tên vật tư / quy cách</th><th>ĐVT</th><th class="n">Khối lượng</th><th class="n">Đơn giá (đ)</th><th class="n">Thành tiền (đ)</th><th>Vị trí sử dụng</th></tr></thead><tbody>';
+ for(const r of T.rows){
+  if(r.h){h+='<tr><td colspan="7" style="background:#eef3fa;font-weight:bold">'+esc(r.h)+'</td></tr>';continue;}
+  h+='<tr><td class="c">'+r.i+'</td><td><b>'+esc(r.name)+'</b></td><td>'+r.unit+'</td><td class="n">'+fmt(r.q,0)+'</td>'+
+   '<td class="n"><input data-k="pr.'+esc(r.name)+'" data-f="price" data-n="'+esc(r.name)+'" type="number" min="0" step="1000" value="'+(r.pr||'')+'" style="width:100px;text-align:right" placeholder="nhập giá"></td>'+
+   '<td class="n">'+(r.tt?fmt(r.tt,0):'')+'</td><td style="font-size:11.5px">'+esc(r.w)+'</td></tr>';
+ }
+ h+='</tbody><tfoot>'+
+  '<tr><td colspan="5" class="n"><b>Cộng vật tư chính</b></td><td class="n"><b>'+fmt(T.sum,0)+'</b></td><td></td></tr>'+
+  '<tr><td colspan="5" class="n">Vật tư phụ (băng keo, vít, tắc kê, ruột gà…) '+st.auxPct+'%</td><td class="n">'+fmt(T.aux,0)+'</td><td></td></tr>'+
+  '<tr><td colspan="5" class="n"><b>TỔNG CỘNG (chưa VAT)</b></td><td class="n res">'+fmt(T.total,0)+'</td><td></td></tr></tfoot></table>'+
+  (hasP?'':'<p class="hint">Nhập đơn giá ở cột "Đơn giá" để ra thành tiền. Đơn giá được lưu lại và dùng chung cho mọi dự án trên máy này (và trong file .json).</p>')+
+  '<p class="hint">Định mức bóc (khớp nối, kẹp ống, co/cút, hộp nối, công tắc, SPD, tiếp địa…) chỉnh ở tab Thông số → "Định mức bóc vật tư". Số điểm ổ cắm/đèn của từng lộ nhập ở cột "Số điểm" trong tab Thiết kế.</p></div></div>';
+ return h;
 }
-
 /* ===================== THƯ VIỆN ===================== */
 function renderLib(){
  const used=new Set();S.project.boards.forEach(b=>b.loads.forEach(l=>used.add(l.devId)));
  let h='<div class="card"><div class="hd"><h3>Thư viện thiết bị điện dân dụng ('+S.library.length+')</h3><span style="flex:1"></span>'+
   '<button class="sm" data-act="addDev">+ Thêm thiết bị</button><button class="sm" data-act="resetLib">Khôi phục mặc định</button></div><div class="bd tw">'+
   '<p class="hint" style="margin-top:0">CB tối thiểu: dòng chọn CB không nhỏ hơn giá trị này (ổ cắm, điều hòa…). Để 0 nếu chỉ tính theo công suất. Sửa xong bấm Enter hoặc rời ô để cập nhật.</p>'+
-  '<table><thead><tr><th>#</th><th>Nhóm</th><th>Tên thiết bị</th><th class="n">P (W)</th><th class="n">Cosφ</th><th class="c">Chống giật (RCBO)</th><th class="n">CB tối thiểu (A)</th><th>Đặc tính CB</th><th>Ghi chú kỹ thuật</th><th></th></tr></thead><tbody>';
+  '<table><thead><tr><th>#</th><th>Nhóm</th><th>Tên thiết bị</th><th class="n">P (W)</th><th class="n">Cosφ</th><th class="c">Chống giật (RCBO)</th><th class="n">CB tối thiểu (A)</th><th>Đặc tính CB</th><th>Thiết bị đầu cuối (bóc VT)</th><th class="n">Số điểm mặc định</th><th>Ghi chú kỹ thuật</th><th></th></tr></thead><tbody>';
  S.library.forEach((d,i)=>{const a='data-id="'+d.id+'"';
   h+='<tr><td class="c">'+(i+1)+'</td><td>'+inp('d.g.'+d.id,d.group,'data-f="d.group" '+a+' style="width:110px"')+'</td><td>'+inp('d.n.'+d.id,d.name,'data-f="d.name" '+a+' style="width:250px"')+'</td>'+
    '<td class="n">'+num('d.P.'+d.id,d.P,'data-f="d.P" '+a,10)+'</td><td class="n">'+num('d.c.'+d.id,d.cos,'data-f="d.cos" '+a+' style="width:60px"',0.01)+'</td>'+
    '<td class="c"><input data-k="d.r.'+d.id+'" type="checkbox" data-f="d.rcd" '+a+(d.rcd?' checked':'')+'></td>'+
    '<td class="n">'+num('d.i.'+d.id,d.imin,'data-f="d.imin" '+a+' style="width:60px"',1)+'</td>'+
    '<td><select data-k="d.cv.'+d.id+'" data-f="d.curve" '+a+'>'+['B','C','D'].map(c=>'<option'+(d.curve===c?' selected':'')+'>'+c+'</option>').join('')+'</select></td>'+
+   (()=>{const [ac,dp]=accOf(d);return '<td><select data-k="d.ac.'+d.id+'" data-f="d.acc" '+a+'>'+Object.keys(ACC).map(x=>'<option value="'+x+'"'+(x===ac?' selected':'')+'>'+ACC[x]+'</option>').join('')+'</select></td><td class="n">'+num('d.pt.'+d.id,dp,'data-f="d.pts" '+a+' style="width:50px"',1)+'</td>';})()+
    '<td>'+inp('d.no.'+d.id,d.note,'data-f="d.note" '+a+' style="width:280px"')+'</td>'+
    '<td>'+(used.has(d.id)?'<span class="hint">đang dùng</span>':'<button class="sm del" data-act="delDev" '+a+'>✕</button>')+'</td></tr>';
  });
@@ -508,7 +562,10 @@ function renderSet(){
   else c=num('s.'+k,st[k],'data-f="s" data-s="'+k+'"',t);
   h+='<label class="f">'+l+c+'</label>';
  });
- h+='</div><p class="hint">Hệ số hiệu chỉnh khả năng tải hiện tại: k_nhiệt độ ('+st.temp+'°C) × k_nhóm = <b>'+fmt(kt(),3)+'</b>. Iz thực tế = Iz bảng × hệ số này.</p></div></div>';
+ h+='</div>'+'<h4 style="margin:14px 0 6px">Định mức bóc vật tư</h4><div class="grid">'+BOM_META.map(([k,l,t])=>{let c;
+  if(t==='yn2')c='<select data-k="s.'+k+'" data-f="s" data-s="'+k+'"><option value="1"'+(+st[k]?' selected':'')+'>Có</option><option value="0"'+(+st[k]?'':' selected')+'>Không</option></select>';
+  else if(t==='secsel2')c='<select data-k="s.'+k+'" data-f="s" data-s="'+k+'">'+[2.5,4,6,10].map(x=>'<option value="'+x+'"'+(+x===+st[k]?' selected':'')+'>'+fmt(x)+'</option>').join('')+'</select>';
+  else c=num('s.'+k,st[k],'data-f="s" data-s="'+k+'"',t);return '<label class="f">'+l+c+'</label>';}).join('')+'</div><p class="hint">Hệ số hiệu chỉnh khả năng tải hiện tại: k_nhiệt độ ('+st.temp+'°C) × k_nhóm = <b>'+fmt(kt(),3)+'</b>. Iz thực tế = Iz bảng × hệ số này.</p></div></div>';
  h+='<div class="card"><div class="hd"><h3>Bảng tra khả năng tải dây dẫn (ruột đồng, cách điện PVC, 30°C)</h3></div><div class="bd tw"><table><thead><tr><th>Tiết diện (mm²)</th><th class="n">CV đơn trong ống – B1, 2 dây (A)</th><th class="n">CVV nhiều lõi – B2, 2 dây (A)</th><th class="n">CVV – B2, 3 dây mang tải (A)</th><th class="n">Iz CV sau hiệu chỉnh (A)</th><th class="n">CB lớn nhất cho CV</th><th>Ống (dây đơn, 3 sợi)</th><th class="n">PE tối thiểu</th></tr></thead><tbody>'+
   SECTIONS.map(s=>{const iz=IZ.CV[s]*kt();const cb=[...RATINGS].reverse().find(r=>r<=iz);return '<tr><td><b>'+fmt(s)+'</b></td><td class="n">'+fmt(IZ.CV[s])+'</td><td class="n">'+fmt(IZ.CVV2[s])+'</td><td class="n">'+fmt(IZ.CVV3[s])+'</td><td class="n">'+fmt(iz,1)+'</td><td class="n">'+(cb?cb+'A':'—')+'</td><td>'+conduitCV(s)+'</td><td class="n">'+fmt(peOf(s))+'</td></tr>';}).join('')+
   '</tbody></table><p class="hint">Nguồn: IEC 60364-5-52 / TCVN 7447-5-52:2012, Bảng B.52.2 – B.52.5 (giá trị làm tròn). Hệ số nhiệt độ PVC: 25°C 1,03 – 30°C 1,00 – 35°C 0,94 – 40°C 0,87 – 45°C 0,79 – 50°C 0,71. Dây PE: S ≤ 16 → PE = S; 16 &lt; S ≤ 35 → 16; S &gt; 35 → S/2.</p></div></div>';
@@ -531,6 +588,7 @@ function renderHelp(){
  '<li>Tủ tổng (cách B): P<sub>tt</sub> = k<sub>đt toàn nhà</sub> × ΣP<sub>tt nhánh</sub>; CB tổng ≥ I<sub>tt</sub> × k<sub>tổng</sub> và ≥ CB nhánh lớn nhất. Với 3 pha: tính riêng từng pha, CB 4P chọn theo pha tải lớn nhất.</li><li>Điện 1 pha: CB tổng không vượt CB điện lực tại công tơ (mặc định 63A). App tính sẵn k<sub>đt toàn nhà</sub> tối đa cho phép, bấm <b>Áp dụng</b> để dùng. Nếu hệ số này quá thấp (&lt; 0,4) thì nên rà lại công suất thiết bị hoặc xin cấp 3 pha.</li>'+
  '<li>Chọn dây: I<sub>z</sub> × k<sub>nhiệt</sub> × k<sub>nhóm</sub> ≥ I<sub>n</sub> (CB) và ΔU ≤ giới hạn; nếu không đạt tự tăng tiết diện.</li>'+
  '<li>Sụt áp: 1 pha ΔU% = 2·L·I·(ρ/S·cosφ + x·sinφ)/U × 100; 3 pha thay 2 bằng √3, U = 380V. ρ = 0,0225 Ω·mm²/m; x = 0,08 mΩ/m.</li></ul>'+
+ '<h3>Bóc vật tư</h3><ul><li>Mỗi lộ thiết bị có cột <b>Số điểm</b> (số ổ cắm, số đèn hoặc số thiết bị) – mặc định lấy từ thư viện.</li><li>App bóc: aptomat, SPD, vỏ tủ + thanh cái N/PE, cáp/dây theo tiết diện (pha + trung tính + PE), đầu cos, ống + khớp nối + kẹp + co/cút, ổ cắm, công tắc, đế âm, hộp nối, hộp đấu nối thiết bị, hệ tiếp địa.</li><li>Định mức bóc chỉnh ở tab Thông số. Nhập đơn giá ở tab Vật tư để ra dự toán; xem riêng từng tủ bằng ô chọn ở đầu bảng.</li></ul>'+
  '<h3>Lưu ý</h3><ul><li>Kết quả phục vụ thiết kế sơ bộ nhà ở; công trình lớn cần kiểm tra thêm dòng ngắn mạch, khả năng cắt Icu, phối hợp chọn lọc theo catalogue hãng.</li>'+
  '<li>Mạch ổ cắm, nhà tắm, ngoài trời, bình nóng lạnh, máy giặt, bơm: dùng RCBO/RCCB 30mA (TCVN 9207:2012, IEC 60364-4-41).</li>'+
  '<li>Tham chiếu: TCVN 9206:2012, TCVN 9207:2012, TCVN 7447 (IEC 60364).</li></ul></div></div>';
@@ -560,8 +618,10 @@ document.addEventListener('change',e=>{
  if(f.startsWith('prj.'))S.project[f.slice(4)]=v;
  else if(f.startsWith('b.')){findB(t.dataset.b)[f.slice(2)]=v;}
  else if(f.startsWith('l.')){const ld=findB(t.dataset.b).loads.find(l=>l.id===t.dataset.l);ld[f.slice(2)]=v;}
- else if(f.startsWith('d.')){const d=S.library.find(x=>x.id===t.dataset.id);d[f.slice(2)]=v;}
+ else if(f.startsWith('d.')){const d=S.library.find(x=>x.id===t.dataset.id);if((f==='d.acc'||f==='d.pts')&&!d.acc){const [a0,p0]=accOf(d);d.acc=a0;d.pts=p0;}d[f.slice(2)]=v;if(f==='d.acc'&&v==='none')d.pts=0;}
  else if(f==='s'){S.settings[t.dataset.s]=+v;}
+ else if(f==='price'){S.prices=S.prices||{};if(+v>0)S.prices[t.dataset.n]=+v;else delete S.prices[t.dataset.n];}
+ else if(f==='bomFilter'){bomFilter=v;renderAll();return;}
  save();renderAll();
 });
 document.addEventListener('click',e=>{
@@ -614,7 +674,7 @@ function exportXLS(){
  const xml='<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'+
   '<Styles><Style ss:ID="Default"><Font ss:FontName="Arial" ss:Size="10"/></Style><Style ss:ID="h"><Font ss:FontName="Arial" ss:Bold="1"/><Interior ss:Color="#DDEBF7" ss:Pattern="Solid"/></Style></Styles>'+
   sheet('Thong_tin',['Mục','Giá trị'],info)+sheet('Ket_qua',RES_HDR,resultRows(R))+
-  sheet('Vat_tu',['Nhóm','Quy cách','ĐVT','Số lượng','Vị trí'],bomRows(bom(R)))+
+  sheet('Boc_vat_tu',['STT','Nhóm','Tên vật tư / quy cách','ĐVT','Khối lượng','Đơn giá (đ)','Thành tiền (đ)','Vị trí'],(()=>{const T=bomTable(bom(R,''));return T.rows.filter(r=>!r.h).map(r=>[r.i,r.cat,r.name,r.unit,r.q,r.pr||'',r.tt||'',r.w]).concat([['','','Cộng vật tư chính','','','',T.sum,''],['','','Vật tư phụ '+ST().auxPct+'%','','','',Math.round(T.aux),''],['','','TỔNG CỘNG (chưa VAT)','','','',Math.round(T.total),'']]);})())+
   sheet('Thu_vien',['Nhóm','Tên','P (W)','Cosφ','Chống giật','CB tối thiểu (A)','Đặc tính','Ghi chú'],S.library.map(d=>[d.group,d.name,+d.P,+d.cos,d.rcd?'Có':'Không',+d.imin,d.curve,d.note]))+
   '</Workbook>';
  download(xml,fname('xls'),'application/vnd.ms-excel');toast('Đã xuất Excel');

@@ -9,7 +9,9 @@ Web app chạy hoàn toàn trên trình duyệt (1 file HTML, không cần cài 
 - Thư viện ~50 thiết bị dân dụng (sửa/thêm được): công suất, cosφ, có cần RCBO chống giật, CB tối thiểu.
 - Tự chọn CB thiết bị → CB nhánh → CB tổng, đảm bảo chọn lọc (mỗi cấp lớn hơn ít nhất 1 bậc).
 - Chọn dây theo khả năng tải (IEC 60364-5-52, hiệu chỉnh nhiệt độ & nhóm mạch) **và** sụt áp; tự tăng tiết diện khi cần.
-- Sơ đồ nguyên lý, bảng kết quả, bảng vật tư (CB, mét dây/cáp, ống, vỏ tủ).
+- Sơ đồ nguyên lý, bảng kết quả.
+- **Bóc tách vật tư chi tiết**: aptomat, SPD, vỏ tủ + thanh cái N/PE, cáp/dây theo tiết diện và màu (pha/trung tính/PE), đầu cos, ống + khớp nối + kẹp + co/cút, ổ cắm, công tắc, đế âm, hộp nối, hệ tiếp địa. Định mức bóc chỉnh được, xem theo từng tủ, nhập đơn giá để ra dự toán.
+- Điện 1 pha: giới hạn CB tổng theo CB điện lực tại công tơ (mặc định 63A), tự tính hệ số đồng thời tối đa cho phép.
 - Xuất Excel, In/PDF, Lưu/Mở dự án dạng `.json`. Dữ liệu tự lưu trên trình duyệt của từng máy.
 
 ## Cách dùng
