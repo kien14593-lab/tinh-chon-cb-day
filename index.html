@@ -121,7 +121,7 @@ const RHO=0.0225;   // Ω·mm²/m – điện trở suất đồng ở nhiệt �
 const XL=0.00008;   // Ω/m – cảm kháng dây
 const ENCL=[4,6,8,12,18,24,36,48,72];
 
-const DEF_SET={U1:220,U3:380,temp:35,kgrp:1,kDev:1.25,kBr:1.2,kMain:1.15,dUdev:3,dUbr:1.5,dUmain:1,dUtot:5,waste:10,th3p:63,minSdev:1.5,minSfeed:2.5,minCB:10,vnRule:1};
+const DEF_SET={U1:220,U3:380,temp:35,kgrp:1,kDev:1.25,kBr:1.2,kMain:1.15,dUdev:3,dUbr:1.5,dUmain:1,dUtot:5,waste:10,th3p:63,minSdev:1.5,minSfeed:2.5,minCB:10,vnRule:1,cbMax1P:63,kdtLo:0.6,kdtHi:0.8};
 const SET_META=[
  ['U1','Điện áp pha (V)',1],['U3','Điện áp dây 3 pha (V)',1],
  ['temp','Nhiệt độ môi trường (°C)','sel'],['kgrp','Hệ số nhóm mạch đi chung ống/máng',0.05],
@@ -129,6 +129,7 @@ const SET_META=[
  ['dUdev','ΔU tối đa lộ thiết bị (%)',0.1],['dUbr','ΔU tối đa cáp trục nhánh (%)',0.1],['dUmain','ΔU tối đa cáp nguồn (%)',0.1],['dUtot','ΔU tổng tối đa đến thiết bị (%)',0.1],
  ['minSdev','Tiết diện tối thiểu lộ thiết bị (mm²)','secsel'],['minSfeed','Tiết diện tối thiểu cáp trục (mm²)','secsel'],
  ['minCB','CB nhỏ nhất dùng cho lộ thiết bị (A)','cbsel'],['vnRule','Quy tắc thực tế: CB ≥ 16A dùng dây CV ≥ 2,5mm²','yn'],
+ ['cbMax1P','CB tổng tối đa khi cấp 1 pha (A) – theo CB điện lực tại công tơ','cbmax'],['kdtLo','Hệ số đồng thời tủ nhánh – cận dưới',0.05],['kdtHi','Hệ số đồng thời tủ nhánh – cận trên',0.05],
  ['th3p','Ngưỡng khuyến nghị cấp 3 pha (A)',1],['waste','Hao hụt vật tư dây/ống (%)',1]
 ];
 
@@ -256,6 +257,7 @@ function compute(){
    Pd+=r.P;Sd+=r.P/r.cos;maxP=Math.max(maxP,r.P);maxIn=Math.max(maxIn,r.In);maxIb=Math.max(maxIb,r.Ib);
   }
   rb.Pd=Pd;rb.maxIn=maxIn;
+  if(rb.loads.length>1&&((+b.kdt)<+st.kdtLo-1e-9||(+b.kdt)>+st.kdtHi+1e-9))rb.msgs.push(['w','k_đt = '+fmt(b.kdt)+' ngoài khoảng khuyến nghị '+fmt(st.kdtLo)+'–'+fmt(st.kdtHi)]);
   if(Pd>0){
    rb.cos=Pd/Sd;rb.Ptt=Math.max((+b.kdt||1)*Pd,maxP);
    if((+b.kdt||1)*Pd<maxP)rb.msgs.push(['i','Ptt lấy bằng thiết bị lớn nhất']);
@@ -284,7 +286,6 @@ function compute(){
   if(!three){
    const P=act.reduce((a,x)=>a+x.Ptt,0),Sx=act.reduce((a,x)=>a+x.Ptt/x.cos,0);
    M.Pd=act.reduce((a,x)=>a+x.Pd,0);M.Psum=P;M.Ptt=(+pr.kdt||1)*P;M.cos=P/Sx;M.Ib=M.Ptt/(U1*M.cos);
-   if(M.Ib>+st.th3p)M.msgs.push(['w','Itt = '+fmt(M.Ib,1)+'A > '+st.th3p+'A: nên xin cấp điện 3 pha']);
   }else{
    M.phase={};['A','B','C'].forEach(p=>{const xs=act.filter(x=>(x.b.phase||'A')===p);const P=xs.reduce((a,x)=>a+x.Ptt,0),Sx=xs.reduce((a,x)=>a+x.Ptt/x.cos,0);
     const Pt=(+pr.kdt||1)*P;M.phase[p]={P:Pt,cos:Sx?P/Sx:1,I:Sx?Pt/(U1*(P/Sx)):0};});
@@ -293,7 +294,12 @@ function compute(){
    M.cos=M.Psum/act.reduce((a,x)=>a+x.Ptt/x.cos,0);M.Ib=Math.max(...Is);M.unbal=avg?(Math.max(...Is)-Math.min(...Is))/avg*100:0;
    if(M.unbal>20)M.msgs.push(['w','Lệch pha '+fmt(M.unbal,0)+'% > 20%: bấm "Tự cân pha" hoặc chia lại tủ']);
   }
-  M.Ireq=Math.max(M.Ib*st.kMain,nextCB(maxBrIn)||Infinity);M.In=selCB(M.Ireq);
+  M.Ireq=Math.max(M.Ib*st.kMain,maxBrIn);M.In=selCB(M.Ireq);M.maxBrIn=maxBrIn;
+  if(!three){const cap=+st.cbMax1P;M.cap=cap;
+   M.kdtMax=Math.floor(cap/st.kMain*U1*M.cos/M.Psum*100)/100;
+   if(M.In&&M.In>cap){M.over=true;M.msgs.push(['e','CB tổng '+M.In+'A > '+cap+'A (CB điện lực tại công tơ). Giảm k_đt toàn nhà xuống ≤ '+fmt(M.kdtMax)+' hoặc chuyển cấp điện 3 pha']);}
+   if(maxBrIn>cap)M.msgs.push(['e','Có CB nhánh '+maxBrIn+'A > '+cap+'A: phải tách tải/giảm CB nhánh']);
+   if(M.kdtMax<0.4)M.msgs.push(['w','k_đt toàn nhà cho phép chỉ '+fmt(M.kdtMax)+' – quá thấp so với thực tế: nên rà lại công suất thiết bị hoặc xin cấp 3 pha']);}
   if(!M.In)M.msgs.push(['e','CB tổng vượt bảng tra']);
   else{
    M.cb=(three?'MCCB 4P ':'MCCB/MCB 2P ')+M.In+'A';
@@ -308,6 +314,7 @@ function compute(){
  }
  // ===== sụt áp tích lũy & cảnh báo chọn lọc =====
  for(const rb of R.boards){
+  if(M.In&&rb.In&&M.In===rb.In)rb.msgs.push(['i','CB nhánh bằng CB tổng – chọn lọc kém, chấp nhận do giới hạn CB tổng']);
   if(rb.In&&rb.maxIn&&!(rb.In>rb.maxIn))rb.msgs.push(['w','CB nhánh không lớn hơn CB thiết bị lớn nhất']);
   for(const r of rb.loads){
    if(r.du==null)continue;
@@ -374,7 +381,8 @@ function renderDesign(R){
    '<div><small>Ptt toàn nhà (×'+fmt(pr.kdt)+')</small><b>'+fmt(M.Ptt/1000,2)+' kW</b></div>'+
    '<div><small>Cosφ trung bình</small><b>'+fmt(M.cos,2)+'</b></div>'+
    '<div><small>Dòng Itt '+(three?'(pha lớn nhất)':'')+'</small><b>'+fmt(M.Ib,1)+' A</b></div>'+
-   '<div><small>CB tổng</small><b class="res">'+esc(M.cb||'—')+'</b></div>'+
+   '<div'+(M.over?' style="background:#fdecea"':'')+'><small>CB tổng'+(M.cap?' (giới hạn '+M.cap+'A)':'')+'</small><b class="res"'+(M.over?' style="color:var(--err)"':'')+'>'+esc(M.cb||'—')+'</b></div>'+
+   (M.kdtMax!=null?'<div><small>k_đt toàn nhà tối đa để CB ≤ '+M.cap+'A</small><b>'+fmt(M.kdtMax)+'</b>'+(Math.abs(M.kdtMax-pr.kdt)>0.004?' <button class="sm noprint" data-act="applyKdt">Áp dụng</button>':'')+'</div>':'')+
    '<div><small>Cáp nguồn</small><b class="res">'+esc(M.wire||'—')+'</b></div>'+
    '<div><small>Ống luồn / ΔU cáp nguồn</small><b>'+(M.conduit||'—')+' / '+fmt(M.du,2)+'%</b></div>'+
    '<div><small>Vỏ tủ tổng (gợi ý)</small><b>≥ '+M.encl+' module</b></div>'+
@@ -494,6 +502,7 @@ function renderSet(){
   let c;
   if(t==='sel')c='<select data-k="s.'+k+'" data-f="s" data-s="'+k+'">'+Object.keys(KTEMP).map(x=>'<option'+(+x===+st[k]?' selected':'')+'>'+x+'</option>').join('')+'</select>';
   else if(t==='secsel')c='<select data-k="s.'+k+'" data-f="s" data-s="'+k+'">'+SECTIONS.slice(0,4).map(x=>'<option value="'+x+'"'+(+x===+st[k]?' selected':'')+'>'+fmt(x)+'</option>').join('')+'</select>';
+  else if(t==='cbmax')c='<select data-k="s.'+k+'" data-f="s" data-s="'+k+'">'+[40,50,63,80,100].map(x=>'<option'+(x===+st[k]?' selected':'')+'>'+x+'</option>').join('')+'</select>';
   else if(t==='cbsel')c='<select data-k="s.'+k+'" data-f="s" data-s="'+k+'">'+[6,10,16].map(x=>'<option'+(x===+st[k]?' selected':'')+'>'+x+'</option>').join('')+'</select>';
   else if(t==='yn')c='<select data-k="s.'+k+'" data-f="s" data-s="'+k+'"><option value="1"'+(+st[k]?' selected':'')+'>Áp dụng</option><option value="0"'+(+st[k]?'':' selected')+'>Không (chỉ theo IEC)</option></select>';
   else c=num('s.'+k,st[k],'data-f="s" data-s="'+k+'"',t);
@@ -503,7 +512,7 @@ function renderSet(){
  h+='<div class="card"><div class="hd"><h3>Bảng tra khả năng tải dây dẫn (ruột đồng, cách điện PVC, 30°C)</h3></div><div class="bd tw"><table><thead><tr><th>Tiết diện (mm²)</th><th class="n">CV đơn trong ống – B1, 2 dây (A)</th><th class="n">CVV nhiều lõi – B2, 2 dây (A)</th><th class="n">CVV – B2, 3 dây mang tải (A)</th><th class="n">Iz CV sau hiệu chỉnh (A)</th><th class="n">CB lớn nhất cho CV</th><th>Ống (dây đơn, 3 sợi)</th><th class="n">PE tối thiểu</th></tr></thead><tbody>'+
   SECTIONS.map(s=>{const iz=IZ.CV[s]*kt();const cb=[...RATINGS].reverse().find(r=>r<=iz);return '<tr><td><b>'+fmt(s)+'</b></td><td class="n">'+fmt(IZ.CV[s])+'</td><td class="n">'+fmt(IZ.CVV2[s])+'</td><td class="n">'+fmt(IZ.CVV3[s])+'</td><td class="n">'+fmt(iz,1)+'</td><td class="n">'+(cb?cb+'A':'—')+'</td><td>'+conduitCV(s)+'</td><td class="n">'+fmt(peOf(s))+'</td></tr>';}).join('')+
   '</tbody></table><p class="hint">Nguồn: IEC 60364-5-52 / TCVN 7447-5-52:2012, Bảng B.52.2 – B.52.5 (giá trị làm tròn). Hệ số nhiệt độ PVC: 25°C 1,03 – 30°C 1,00 – 35°C 0,94 – 40°C 0,87 – 45°C 0,79 – 50°C 0,71. Dây PE: S ≤ 16 → PE = S; 16 &lt; S ≤ 35 → 16; S &gt; 35 → S/2.</p></div></div>';
- h+='<div class="card"><div class="hd"><h3>Dãy định mức Aptomat (A)</h3></div><div class="bd">'+RATINGS.join(' – ')+'<p class="hint">Điều kiện chọn: Itt × hệ số ≤ I<sub>n</sub> ≤ I<sub>z</sub> (dây). CB nhánh luôn lớn hơn CB thiết bị lớn nhất trong tủ ít nhất 1 cấp; CB tổng lớn hơn CB nhánh lớn nhất ít nhất 1 cấp.</p></div></div>';
+ h+='<div class="card"><div class="hd"><h3>Dãy định mức Aptomat (A)</h3></div><div class="bd">'+RATINGS.join(' – ')+'<p class="hint">Điều kiện chọn: Itt × hệ số ≤ I<sub>n</sub> ≤ I<sub>z</sub> (dây). CB nhánh luôn lớn hơn CB thiết bị lớn nhất trong tủ ít nhất 1 cấp; CB tổng ≥ CB nhánh lớn nhất và (điện 1 pha) ≤ CB điện lực tại công tơ.</p></div></div>';
  return h;
 }
 
@@ -519,7 +528,7 @@ function renderHelp(){
  '<li>Dòng tính toán thiết bị: I<sub>tt</sub> = P / (U<sub>pha</sub> × cosφ).</li>'+
  '<li>Dòng chọn CB thiết bị = max(I<sub>tt</sub> × k<sub>TB</sub>; CB tối thiểu) → chọn CB định mức nhỏ nhất ≥ giá trị này.</li>'+
  '<li>Tủ nhánh: P<sub>tt</sub> = max(k<sub>đt</sub> × ΣP; P thiết bị lớn nhất); cosφ<sub>tb</sub> = ΣP / Σ(P/cosφ); CB nhánh ≥ I<sub>tt</sub> × k<sub>nhánh</sub> và lớn hơn CB thiết bị lớn nhất 1 cấp.</li>'+
- '<li>Tủ tổng: P<sub>tt</sub> = k<sub>đt toàn nhà</sub> × ΣP<sub>tt nhánh</sub>. Với 3 pha: tính riêng từng pha, CB 4P chọn theo pha tải lớn nhất.</li>'+
+ '<li>Tủ tổng (cách B): P<sub>tt</sub> = k<sub>đt toàn nhà</sub> × ΣP<sub>tt nhánh</sub>; CB tổng ≥ I<sub>tt</sub> × k<sub>tổng</sub> và ≥ CB nhánh lớn nhất. Với 3 pha: tính riêng từng pha, CB 4P chọn theo pha tải lớn nhất.</li><li>Điện 1 pha: CB tổng không vượt CB điện lực tại công tơ (mặc định 63A). App tính sẵn k<sub>đt toàn nhà</sub> tối đa cho phép, bấm <b>Áp dụng</b> để dùng. Nếu hệ số này quá thấp (&lt; 0,4) thì nên rà lại công suất thiết bị hoặc xin cấp 3 pha.</li>'+
  '<li>Chọn dây: I<sub>z</sub> × k<sub>nhiệt</sub> × k<sub>nhóm</sub> ≥ I<sub>n</sub> (CB) và ΔU ≤ giới hạn; nếu không đạt tự tăng tiết diện.</li>'+
  '<li>Sụt áp: 1 pha ΔU% = 2·L·I·(ρ/S·cosφ + x·sinφ)/U × 100; 3 pha thay 2 bằng √3, U = 380V. ρ = 0,0225 Ω·mm²/m; x = 0,08 mΩ/m.</li></ul>'+
  '<h3>Lưu ý</h3><ul><li>Kết quả phục vụ thiết kế sơ bộ nhà ở; công trình lớn cần kiểm tra thêm dòng ngắn mạch, khả năng cắt Icu, phối hợp chọn lọc theo catalogue hãng.</li>'+
@@ -574,6 +583,7 @@ document.addEventListener('click',e=>{
   case 'resetLib':if(!confirm('Khôi phục thư viện mặc định? Thiết bị tự thêm sẽ mất; các lộ dùng thiết bị không còn sẽ báo "chưa chọn".'))return;
    {const old={};S.library.forEach(d=>old[d.id]=d.name);S.library=defLib();const by={};S.library.forEach(d=>by[d.name]=d.id);
     bs.forEach(b=>b.loads.forEach(l=>l.devId=by[old[l.devId]]||''));}break;
+  case 'applyKdt':pr.kdt=Math.max(0.01,R.main.kdtMax);toast('Đã đặt k_đt toàn nhà = '+fmt(pr.kdt));break;
   case 'resetSet':S.settings={...DEF_SET};break;
   case 'new':if(!confirm('Tạo dự án mới (trống)? Dự án hiện tại sẽ bị thay thế – hãy Lưu .json trước nếu cần.'))return;
    S.project={name:'Dự án mới',supply:'1P',kdt:0.75,len:15,boards:[{id:uid(),name:'Tủ nhánh 1',kdt:0.7,len:15,phase:'A',loads:[{id:uid(),devId:'',qty:1,len:15}]}]};break;
