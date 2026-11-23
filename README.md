@@ -2,7 +2,7 @@
 
 Web app chạy hoàn toàn trên trình duyệt (1 file HTML, không cần cài đặt, chạy được offline) để tính chọn **aptomat (CB)**, **tiết diện dây/cáp**, **ống luồn** và **thống kê vật tư** cho hệ thống điện nhà ở theo sơ đồ 2 cấp: **Tủ tổng → Tủ nhánh → Thiết bị**.
 
-🔗 **Dùng thử:** https://<tên-tài-khoản>.github.io/<tên-repo>/
+🔗 **Dùng thử:** https://kien14593-lab.github.io/tinh-chon-cb-day/
 
 ## Tính năng
 - Nguồn 1 pha 220V hoặc 3 pha 380V (chia tủ theo pha A/B/C, nút **Tự cân pha**, báo lệch pha).
