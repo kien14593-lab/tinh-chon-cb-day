@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tính chọn Aptomat & Dây dẫn – Nhà dân dụng</title>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--line:#dde3ea;--ink:#1f2933;--mute:#66788a;--acc:#1f5fa8;--acc2:#e8f0fb;--ok:#1e7d32;--warn:#b26a00;--err:#c62828;--inp:#fffdf2}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:var(--ink);background:var(--bg)}
+header{background:var(--acc);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:10}
+header h1{font-size:16px;margin:0;flex:1;min-width:240px}
+header h1 small{display:block;font-weight:normal;opacity:.8;font-size:11px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);padding:5px 10px;border-radius:5px}
+button:hover{border-color:var(--acc)}
+button.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+button.sm{padding:2px 7px;font-size:12px}
+button.del{color:var(--err);border-color:transparent;background:transparent}
+button.del:hover{border-color:var(--err)}
+header button{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.35)}
+nav{display:flex;gap:2px;padding:0 16px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:52px;z-index:9;overflow-x:auto}
+nav button{border:none;border-bottom:3px solid transparent;border-radius:0;padding:10px 14px;background:none;white-space:nowrap}
+nav button.on{border-bottom-color:var(--acc);color:var(--acc);font-weight:bold}
+main{padding:14px 16px;max-width:1500px;margin:0 auto}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;margin-bottom:14px}
+.card>.hd{padding:9px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fafbfd;border-radius:8px 8px 0 0}
+.card>.hd h3{margin:0;font-size:14px}
+.card>.bd{padding:10px 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px 14px}
+label.f{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mute)}
+input,select{font:inherit;padding:4px 6px;border:1px solid #c9d2dc;border-radius:4px;background:var(--inp);color:var(--ink);min-width:0}
+input[type=number]{width:80px}
+input.w{width:100%}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:middle}
+th{background:#f0f3f7;font-weight:bold;font-size:12px}
+td.n,th.n{text-align:right;white-space:nowrap}
+td.c{text-align:center}
+.tw{overflow-x:auto}
+.pill{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:bold}
+.p-ok{background:#e6f4ea;color:var(--ok)}.p-w{background:#fff3e0;color:var(--warn)}.p-e{background:#fdecea;color:var(--err)}
+.msg{font-size:11.5px;line-height:1.35}
+.msg .e{color:var(--err)}.msg .w{color:var(--warn)}.msg .i{color:var(--mute)}
+.res{font-weight:bold;color:var(--acc)}
+.sum{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px}
+.sum b{color:var(--acc)}
+.kpi{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.kpi div{background:var(--acc2);border-radius:6px;padding:8px 10px}
+.kpi small{display:block;color:var(--mute);font-size:11px}
+.kpi b{font-size:15px}
+.hint{color:var(--mute);font-size:12px;margin:4px 0 0}
+/* so do */
+.sld{display:flex;flex-direction:column;align-items:center}
+.box{border:2px solid var(--acc);border-radius:8px;background:#fff;padding:8px 12px;text-align:center;min-width:240px}
+.box h4{margin:0 0 4px;font-size:13px}
+.vline{width:2px;height:22px;background:var(--acc)}
+.bus{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;border-top:2px solid var(--acc);padding-top:0;width:100%}
+.br{display:flex;flex-direction:column;align-items:center;min-width:220px;max-width:280px}
+.br .box{border-color:#5b8bc6;min-width:210px}
+.br ul{list-style:none;margin:6px 0 0;padding:0;width:100%}
+.br li{border:1px solid var(--line);border-left:3px solid #5b8bc6;border-radius:4px;padding:4px 6px;margin-bottom:4px;background:#fff;font-size:11.5px}
+.br li.rcd{border-left-color:#d08700}
+.legend{font-size:11.5px;color:var(--mute);margin-top:10px;text-align:center}
+.ph{display:inline-block;width:18px;height:18px;line-height:18px;border-radius:50%;color:#fff;font-size:11px;font-weight:bold;text-align:center}
+.phA{background:#c62828}.phB{background:#f9a825}.phC{background:#1565c0}
+.doc h3{margin:16px 0 6px}.doc p,.doc li{line-height:1.5}
+.toast{position:fixed;bottom:18px;right:18px;background:#263238;color:#fff;padding:9px 14px;border-radius:6px;opacity:0;transition:.3s;pointer-events:none}
+.toast.on{opacity:.95}
+@media print{
+ header,nav,.noprint,button{display:none!important}
+ body{background:#fff;font-size:11px}
+ main{padding:0;max-width:none}
+ .card{break-inside:avoid;border-color:#999}
+ input,select{border:none;background:none;padding:0;appearance:none}
+}
+</style>
+</head>
+<body>
+<header>
+ <h1>TÍNH CHỌN APTOMAT &amp; TIẾT DIỆN DÂY – NHÀ DÂN DỤNG<small id="hdrPrj"></small></h1>
+ <button data-act="new">Dự án mới</button>
+ <button data-act="open">Mở (.json)</button>
+ <button data-act="saveJson">Lưu (.json)</button>
+ <button data-act="xls">Xuất Excel</button>
+ <button data-act="print">In / PDF</button>
+</header>
+<nav id="nav">
+ <button data-tab="design" class="on">1. Thiết kế</button>
+ <button data-tab="sld">2. Sơ đồ nguyên lý</button>
+ <button data-tab="result">3. Bảng kết quả</button>
+ <button data-tab="bom">4. Vật tư</button>
+ <button data-tab="lib">5. Thư viện thiết bị</button>
+ <button data-tab="set">6. Thông số &amp; Bảng tra</button>
+ <button data-tab="help">Hướng dẫn</button>
+</nav>
+<main>
+ <section id="design" class="on"></section>
+ <section id="sld"></section>
+ <section id="result"></section>
+ <section id="bom"></section>
+ <section id="lib"></section>
+ <section id="set"></section>
+ <section id="help"></section>
+</main>
+<input type="file" id="fileOpen" accept=".json,application/json" hidden>
+<div class="toast" id="toast"></div>
+<script>
+"use strict";
+/* ===================== BẢNG TRA ===================== */
+const RATINGS=[6,10,16,20,25,32,40,50,63,80,100,125,160,200,250];
+const SECTIONS=[1.5,2.5,4,6,10,16,25,35,50,70,95,120];
+// Khả năng tải dài hạn Iz (A) – IEC 60364-5-52 (TCVN 7447-5-52), ruột đồng, cách điện PVC, 30°C
+const IZ={
+ CV:  {1.5:17.5,2.5:24,4:32,6:41,10:57,16:76,25:101,35:125,50:151,70:192,95:232,120:269}, // B1: dây đơn trong ống, 2 dây mang tải
+ CVV2:{1.5:16.5,2.5:23,4:30,6:38,10:52,16:69,25:90,35:111,50:133,70:168,95:201,120:232},  // B2: cáp nhiều lõi trong ống, 2 dây mang tải
+ CVV3:{1.5:15,2.5:20,4:27,6:34,10:46,16:62,25:80,35:99,50:118,70:149,95:179,120:206}       // B2: 3 dây mang tải
+};
+const KTEMP={25:1.03,30:1.00,35:0.94,40:0.87,45:0.79,50:0.71}; // hệ số nhiệt độ PVC
+const RHO=0.0225;   // Ω·mm²/m – điện trở suất đồng ở nhiệt độ làm việc
+const XL=0.00008;   // Ω/m – cảm kháng dây
+const ENCL=[4,6,8,12,18,24,36,48,72];
+
+const DEF_SET={U1:220,U3:380,temp:35,kgrp:1,kDev:1.25,kBr:1.2,kMain:1.15,dUdev:3,dUbr:1.5,dUmain:1,dUtot:5,waste:10,th3p:63,minSdev:1.5,minSfeed:2.5,minCB:10,vnRule:1};
+const SET_META=[
+ ['U1','Điện áp pha (V)',1],['U3','Điện áp dây 3 pha (V)',1],
+ ['temp','Nhiệt độ môi trường (°C)','sel'],['kgrp','Hệ số nhóm mạch đi chung ống/máng',0.05],
+ ['kDev','Hệ số chọn CB thiết bị (×Itt)',0.05],['kBr','Hệ số chọn CB nhánh (×Itt)',0.05],['kMain','Hệ số chọn CB tổng (×Itt)',0.05],
+ ['dUdev','ΔU tối đa lộ thiết bị (%)',0.1],['dUbr','ΔU tối đa cáp trục nhánh (%)',0.1],['dUmain','ΔU tối đa cáp nguồn (%)',0.1],['dUtot','ΔU tổng tối đa đến thiết bị (%)',0.1],
+ ['minSdev','Tiết diện tối thiểu lộ thiết bị (mm²)','secsel'],['minSfeed','Tiết diện tối thiểu cáp trục (mm²)','secsel'],
+ ['minCB','CB nhỏ nhất dùng cho lộ thiết bị (A)','cbsel'],['vnRule','Quy tắc thực tế: CB ≥ 16A dùng dây CV ≥ 2,5mm²','yn'],
+ ['th3p','Ngưỡng khuyến nghị cấp 3 pha (A)',1],['waste','Hao hụt vật tư dây/ống (%)',1]
+];
+
+/* ===================== THƯ VIỆN MẶC ĐỊNH ===================== */
+// [nhóm, tên, P(W), cosφ, chống giật, CB tối thiểu(A), đặc tính, ghi chú]
+const DEF_LIB=[
+ ['Chiếu sáng','Chiếu sáng tầng / phòng',250,0.9,0,0,'C','Đèn LED âm trần, đèn trang trí'],
+ ['Chiếu sáng','Chiếu sáng phụ / cầu thang / sự cố',300,0.9,0,0,'C','Hành lang, cầu thang, đèn sự cố'],
+ ['Chiếu sáng','Đèn sân vườn / ngoài trời',300,0.9,1,0,'C','Ngoài trời: bắt buộc chống giật'],
+ ['Chiếu sáng','Đèn sưởi nhà tắm 3 bóng',825,1,1,0,'C','Khu ẩm ướt: bắt buộc chống giật'],
+ ['Ổ cắm','Ổ cắm phòng khách / ngủ',1500,0.85,1,16,'C','Ổ cắm 16A → tối thiểu CB 16A, dây 2.5mm²'],
+ ['Ổ cắm','Ổ cắm khu vực bếp',2000,0.9,1,20,'C','Tối thiểu CB 20A, dây 2.5mm²'],
+ ['Ổ cắm','Ổ cắm WC / ban công / ngoài trời',1000,0.9,1,16,'C','Khu ẩm ướt, ổ cắm có nắp IP44'],
+ ['Điều hòa','Điều hòa 9000 BTU',900,0.85,0,0,'C','Không lắp RCBO tránh nhảy do dòng khởi động'],
+ ['Điều hòa','Điều hòa 12000 BTU',1200,0.85,0,16,'C','Tối thiểu MCB 16A + CV 2.5mm² + PE'],
+ ['Điều hòa','Điều hòa 18000 BTU',1800,0.85,0,20,'C','Tối thiểu MCB 20A + CV 2.5mm² + PE'],
+ ['Điều hòa','Điều hòa 24000 BTU',2500,0.85,0,25,'C','Tối thiểu MCB 25A + CV 4mm² + PE'],
+ ['Điều hòa','Điều hòa tủ đứng 28000 BTU',2900,0.85,0,25,'C','Lộ riêng'],
+ ['Điều hòa','Điều hòa tủ đứng 36000 BTU (1 pha)',3600,0.85,0,32,'C','Lộ riêng; cân nhắc loại 3 pha'],
+ ['Nước nóng','Bình nước nóng gián tiếp 30L',2500,1,1,0,'C','Bắt buộc RCBO + PE'],
+ ['Nước nóng','Bình nước nóng 15–20L',2500,1,1,16,'C','Bắt buộc RCBO + PE'],
+ ['Nước nóng','Bình nước nóng trực tiếp',4500,1,1,0,'C','Bắt buộc RCBO + PE, lộ riêng'],
+ ['Nước nóng','Bình NLMT – điện trở phụ',1500,1,1,16,'C','Bắt buộc RCBO + PE'],
+ ['Bếp','Bếp từ đơn',2000,0.95,1,0,'C','RCBO + PE'],
+ ['Bếp','Bếp từ đôi / ba vùng nấu',4000,0.95,1,0,'C','RCBO + PE, lộ riêng'],
+ ['Bếp','Bếp từ 4 vùng nấu công suất lớn',6800,0.95,1,0,'C','Lộ riêng; >6kW cân nhắc 3 pha'],
+ ['Bếp','Lò nướng + Lò vi sóng',3000,0.95,1,0,'C','RCBO + PE'],
+ ['Bếp','Máy rửa bát',2200,0.9,1,16,'C','Bắt buộc chống giật & tiếp địa vỏ'],
+ ['Bếp','Nồi cơm điện',800,1,1,0,'C','Thường thuộc lộ ổ cắm bếp'],
+ ['Bếp','Ấm siêu tốc',2000,1,1,0,'C','Thường thuộc lộ ổ cắm bếp'],
+ ['Bếp','Máy hút mùi',200,0.85,0,0,'C','Ổ cắm riêng trên tủ bếp'],
+ ['Bếp','Tủ lạnh Side by Side',350,0.85,0,0,'C','Nên đi lộ riêng không qua chống giật'],
+ ['Bếp','Tủ lạnh thường 2 cánh',150,0.85,0,0,'C','Dòng khởi động máy nén cao'],
+ ['Bếp','Máy lọc nước RO',60,0.85,1,0,'C','Khu ẩm ướt'],
+ ['Giặt sấy','Máy giặt + Máy sấy',2200,0.85,1,16,'C','RCBO + PE vỏ máy'],
+ ['Giặt sấy','Máy giặt cửa trên',500,0.85,1,16,'C','RCBO + PE vỏ máy'],
+ ['Giặt sấy','Máy sấy quần áo (riêng)',2500,0.9,1,16,'C','Lộ riêng, RCBO + PE'],
+ ['Giặt sấy','Bàn là / bàn ủi hơi nước',2000,1,1,16,'C','Dùng qua ổ cắm 16A'],
+ ['Bơm - Động cơ','Máy bơm nước dân dụng',1000,0.8,1,0,'C','RCBO, đặc tính C (dòng khởi động)'],
+ ['Bơm - Động cơ','Bơm tăng áp mái',750,0.8,1,0,'C','Tủ IP65 ngoài trời + RCBO'],
+ ['Bơm - Động cơ','Bơm hồ cá / tiểu cảnh',100,0.8,1,0,'C','Ngoài trời, bắt buộc RCBO'],
+ ['Bơm - Động cơ','Cửa cuốn / Cổng tự động',600,0.8,0,0,'C','Động cơ'],
+ ['Bơm - Động cơ','Cổng điện / Cửa cuốn công suất lớn',1500,0.8,0,16,'C','Động cơ'],
+ ['Bơm - Động cơ','Quạt trần / quạt đứng',80,0.85,0,0,'C','Đi chung lộ ổ cắm/chiếu sáng'],
+ ['Bơm - Động cơ','Quạt hút / thông gió nhà tắm',40,0.85,1,0,'C','Khu ẩm ướt'],
+ ['Sưởi - Khác','Máy sưởi dầu / quạt sưởi',2000,1,1,16,'C','Dùng qua ổ cắm 16A'],
+ ['Sưởi - Khác','Máy hút ẩm',300,0.85,0,0,'C','Dùng qua ổ cắm'],
+ ['Điện tử','Tivi + dàn âm thanh',400,0.9,0,0,'C','Đi chung lộ ổ cắm'],
+ ['Điện tử','Máy tính bàn + màn hình',400,0.9,0,0,'C','Nên có UPS'],
+ ['Điện tử','Hệ thống Camera / Wifi',300,0.9,0,0,'C','Nguồn liên tục'],
+ ['Điện tử','Chuông cửa / Interphone / Khóa từ',50,0.9,0,0,'C','Nguồn liên tục'],
+ ['Xe điện','Sạc xe máy điện',600,0.95,1,16,'C','Ổ cắm riêng nhà xe, RCBO'],
+ ['Xe điện','Sạc ô tô điện 7kW (wallbox)',7000,1,1,40,'C','RCBO type A(+6mA DC) hoặc type B theo hãng'],
+ ['Xe điện','Máy chạy bộ / thiết bị tập',1500,0.85,1,16,'C','Ổ cắm riêng có PE']
+];
+function defLib(){return DEF_LIB.map((r,i)=>({id:'D'+String(i+1).padStart(3,'0'),group:r[0],name:r[1],P:r[2],cos:r[3],rcd:!!r[4],imin:r[5],curve:r[6],note:r[7]}));}
+
+/* ===================== DỰ ÁN MẪU ===================== */
+function sampleProject(lib){
+ const id=n=>{const d=lib.find(x=>x.name===n);return d?d.id:'';};
+ const L=(n,len,q)=>({id:uid(),devId:id(n),qty:q||1,len:len});
+ return {name:'Nhà mẫu 2 tầng (từ file Excel)',supply:'1P',kdt:0.75,len:15,boards:[
+  {id:uid(),name:'Tủ Tầng 1 - Phòng khách',kdt:0.7,len:10,phase:'A',loads:[L('Chiếu sáng tầng / phòng',15),L('Ổ cắm phòng khách / ngủ',18),L('Điều hòa 24000 BTU',12),L('Máy bơm nước dân dụng',20),L('Chiếu sáng phụ / cầu thang / sự cố',15)]},
+  {id:uid(),name:'Tủ Tầng 1 - Phòng bếp',kdt:0.75,len:12,phase:'B',loads:[L('Bếp từ đôi / ba vùng nấu',8),L('Lò nướng + Lò vi sóng',8),L('Bình nước nóng gián tiếp 30L',10),L('Ổ cắm khu vực bếp',12)]},
+  {id:uid(),name:'Tủ Phòng ngủ 1',kdt:0.7,len:18,phase:'C',loads:[L('Chiếu sáng tầng / phòng',12),L('Đèn sân vườn / ngoài trời',20),L('Ổ cắm phòng khách / ngủ',15),L('Điều hòa 12000 BTU',10),L('Bình nước nóng gián tiếp 30L',8),L('Đèn sưởi nhà tắm 3 bóng',8)]},
+  {id:uid(),name:'Tủ Tầng 2 (Sảnh & SHC)',kdt:0.7,len:20,phase:'A',loads:[L('Chiếu sáng tầng / phòng',15),L('Đèn sân vườn / ngoài trời',20),L('Ổ cắm phòng khách / ngủ',18),L('Điều hòa 9000 BTU',10)]},
+  {id:uid(),name:'Tủ Phòng ngủ 2',kdt:0.7,len:22,phase:'B',loads:[L('Chiếu sáng tầng / phòng',12),L('Ổ cắm phòng khách / ngủ',15),L('Điều hòa 12000 BTU',10),L('Bình nước nóng gián tiếp 30L',8),L('Đèn sưởi nhà tắm 3 bóng',8)]},
+  {id:uid(),name:'Tủ Camera & Mái (IP65)',kdt:0.85,len:30,phase:'C',loads:[L('Hệ thống Camera / Wifi',10),L('Bơm tăng áp mái',8)]}
+ ]};
+}
+
+/* ===================== TRẠNG THÁI ===================== */
+const KEY='dien-dan-dung-v1';
+let S;
+function uid(){return 'x'+Math.random().toString(36).slice(2,10);}
+function fresh(){const lib=defLib();return {settings:{...DEF_SET},library:lib,project:sampleProject(lib)};}
+function load(){try{const t=localStorage.getItem(KEY);if(t){const o=JSON.parse(t);if(o&&o.project&&o.library){o.settings={...DEF_SET,...o.settings};return o;}}}catch(e){}return fresh();}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+S=load();
+
+/* ===================== TÍNH TOÁN ===================== */
+const ST=()=>S.settings;
+const kt=()=>(KTEMP[ST().temp]||1)*(+ST().kgrp||1);
+const selCB=I=>RATINGS.find(r=>r>=I-1e-9)||null;
+const nextCB=r=>RATINGS.find(x=>x>r)||null;
+const peOf=s=>s<=16?s:(s<=35?16:SECTIONS.find(x=>x>=s/2));
+function dU(L,I,s,cos,U,three){const sin=Math.sqrt(Math.max(0,1-cos*cos));return (three?Math.sqrt(3):2)*L*I*(RHO/s*cos+XL*sin)/U*100;}
+function selCable(In,Ib,L,cos,U,three,tbl,dUmax,minS){
+ let up=false;
+ for(const s of SECTIONS){
+  if(s<minS)continue;
+  const iz=tbl[s]*kt();
+  if(iz<In)continue;
+  const du=dU(L,Ib,s,cos,U,three);
+  if(du>dUmax){up=true;continue;}
+  return {S:s,iz,du,upDU:up};
+ }
+ return null;
+}
+const conduitCV=s=>s<=1.5?'D16':s<=2.5?'D20':s<=4?'D25':s<=10?'D32':s<=25?'D40':'D50';
+function conduitCVV(s,cores){const t=[[2.5,'D20'],[6,'D25'],[16,'D32'],[35,'D40'],[50,'D50'],[999,'D63']];let i=t.findIndex(x=>s<=x[0]);if(cores>=4)i=Math.min(i+1,t.length-1);return t[i][1];}
+
+function compute(){
+ const st=ST(),lib={},pr=S.project;S.library.forEach(d=>lib[d.id]=d);
+ const U1=+st.U1,U3=+st.U3,three=pr.supply==='3P';
+ const R={boards:[],main:null,warnings:[]};
+ for(const b of pr.boards){
+  const rb={b,loads:[],msgs:[]};
+  let Pd=0,Sd=0,maxP=0,maxIn=0,maxIb=0;
+  for(const ld of b.loads){
+   const d=lib[ld.devId];const r={ld,d,msgs:[]};rb.loads.push(r);
+   if(!d){r.msgs.push(['e','Chưa chọn thiết bị']);continue;}
+   const qty=Math.max(0,+ld.qty||0),len=Math.max(0,+ld.len||0);
+   r.P=d.P*qty;r.cos=+d.cos||0.9;
+   if(r.P<=0){r.msgs.push(['w','Công suất = 0']);continue;}
+   r.Ib=r.P/(U1*r.cos);r.Ireq=Math.max(r.Ib*st.kDev,+d.imin||0,+st.minCB||0);r.In=selCB(r.Ireq);
+   r.type=(d.rcd?'RCBO 1P+N':'MCB 1P');
+   if(!r.In){r.msgs.push(['e','Vượt bảng tra CB (>'+RATINGS.at(-1)+'A)']);continue;}
+   r.cb=r.type+' '+r.In+'A ('+d.curve+')';
+   r.cab=selCable(r.In,r.Ib,len,r.cos,U1,false,IZ.CV,+st.dUdev,Math.max(+st.minSdev,(+st.vnRule&&r.In>=16)?2.5:0));
+   if(!r.cab){r.msgs.push(['e','Không có tiết diện CV phù hợp – giảm chiều dài hoặc tách lộ']);}
+   else{r.S=r.cab.S;r.PE=peOf(r.S);r.wire='CV 2×'+fmt(r.S)+' + PE '+fmt(r.PE);r.conduit=conduitCV(r.S);r.du=r.cab.du;
+    if(r.cab.upDU)r.msgs.push(['i','Tăng tiết diện do sụt áp']);}
+   if(d.imin&&r.Ib*st.kDev<d.imin)r.msgs.push(['i','Theo CB tối thiểu '+d.imin+'A']);
+   Pd+=r.P;Sd+=r.P/r.cos;maxP=Math.max(maxP,r.P);maxIn=Math.max(maxIn,r.In);maxIb=Math.max(maxIb,r.Ib);
+  }
+  rb.Pd=Pd;rb.maxIn=maxIn;
+  if(Pd>0){
+   rb.cos=Pd/Sd;rb.Ptt=Math.max((+b.kdt||1)*Pd,maxP);
+   if((+b.kdt||1)*Pd<maxP)rb.msgs.push(['i','Ptt lấy bằng thiết bị lớn nhất']);
+   rb.Ib=Math.max(rb.Ptt/(U1*rb.cos),maxIb);
+   rb.Ireq=Math.max(rb.Ib*st.kBr,nextCB(maxIn)||Infinity);
+   rb.In=selCB(rb.Ireq);
+   if(!rb.In){rb.msgs.push(['e','CB nhánh vượt bảng tra – tách tủ hoặc cấp 3 pha']);}
+   else{
+    rb.cb='MCB 2P '+rb.In+'A';
+    rb.cab=selCable(rb.In,rb.Ib,+b.len||0,rb.cos,U1,false,IZ.CVV2,+st.dUbr,+st.minSfeed);
+    if(!rb.cab)rb.msgs.push(['e','Không có cáp trục phù hợp']);
+    else{rb.S=rb.cab.S;rb.PE=peOf(rb.S);rb.wire='CVV 2×'+fmt(rb.S)+' + PE CV '+fmt(rb.PE);rb.conduit=conduitCVV(rb.S,3);rb.du=rb.cab.du;
+     if(rb.cab.upDU)rb.msgs.push(['i','Tăng tiết diện cáp trục do sụt áp']);}
+   }
+  }else rb.msgs.push(['w','Tủ chưa có thiết bị']);
+  // module tủ nhánh
+  rb.modules=2+rb.loads.reduce((a,r)=>a+(r.In?(r.d.rcd?2:1):0),0);
+  rb.encl=ENCL.find(x=>x>=Math.ceil(rb.modules*1.2))||ENCL.at(-1);
+  R.boards.push(rb);
+ }
+ // ===== TỦ TỔNG =====
+ const act=R.boards.filter(x=>x.Ptt>0);
+ const M={three,msgs:[]};R.main=M;
+ const maxBrIn=Math.max(0,...act.map(x=>x.In||0));
+ if(act.length){
+  if(!three){
+   const P=act.reduce((a,x)=>a+x.Ptt,0),Sx=act.reduce((a,x)=>a+x.Ptt/x.cos,0);
+   M.Pd=act.reduce((a,x)=>a+x.Pd,0);M.Psum=P;M.Ptt=(+pr.kdt||1)*P;M.cos=P/Sx;M.Ib=M.Ptt/(U1*M.cos);
+   if(M.Ib>+st.th3p)M.msgs.push(['w','Itt = '+fmt(M.Ib,1)+'A > '+st.th3p+'A: nên xin cấp điện 3 pha']);
+  }else{
+   M.phase={};['A','B','C'].forEach(p=>{const xs=act.filter(x=>(x.b.phase||'A')===p);const P=xs.reduce((a,x)=>a+x.Ptt,0),Sx=xs.reduce((a,x)=>a+x.Ptt/x.cos,0);
+    const Pt=(+pr.kdt||1)*P;M.phase[p]={P:Pt,cos:Sx?P/Sx:1,I:Sx?Pt/(U1*(P/Sx)):0};});
+   const Is=['A','B','C'].map(p=>M.phase[p].I),avg=(Is[0]+Is[1]+Is[2])/3;
+   M.Pd=act.reduce((a,x)=>a+x.Pd,0);M.Psum=act.reduce((a,x)=>a+x.Ptt,0);M.Ptt=['A','B','C'].reduce((a,p)=>a+M.phase[p].P,0);
+   M.cos=M.Psum/act.reduce((a,x)=>a+x.Ptt/x.cos,0);M.Ib=Math.max(...Is);M.unbal=avg?(Math.max(...Is)-Math.min(...Is))/avg*100:0;
+   if(M.unbal>20)M.msgs.push(['w','Lệch pha '+fmt(M.unbal,0)+'% > 20%: bấm "Tự cân pha" hoặc chia lại tủ']);
+  }
+  M.Ireq=Math.max(M.Ib*st.kMain,nextCB(maxBrIn)||Infinity);M.In=selCB(M.Ireq);
+  if(!M.In)M.msgs.push(['e','CB tổng vượt bảng tra']);
+  else{
+   M.cb=(three?'MCCB 4P ':'MCCB/MCB 2P ')+M.In+'A';
+   M.cab=three?selCable(M.In,M.Ib,+pr.len||0,M.cos,U3,true,IZ.CVV3,+st.dUmain,+st.minSfeed)
+              :selCable(M.In,M.Ib,+pr.len||0,M.cos,U1,false,IZ.CVV2,+st.dUmain,+st.minSfeed);
+   if(!M.cab)M.msgs.push(['e','Không có cáp nguồn phù hợp']);
+   else{M.S=M.cab.S;M.PE=peOf(M.S);M.wire=(three?'CVV 4×':'CVV 2×')+fmt(M.S)+' + PE CV '+fmt(M.PE);M.conduit=conduitCVV(M.S,three?5:3);M.du=M.cab.du;
+    if(M.cab.upDU)M.msgs.push(['i','Tăng tiết diện cáp nguồn do sụt áp']);}
+  }
+  M.modules=(three?4:2)+act.length*2+(three?4:2);
+  M.encl=ENCL.find(x=>x>=Math.ceil(M.modules*1.2))||ENCL.at(-1);
+ }
+ // ===== sụt áp tích lũy & cảnh báo chọn lọc =====
+ for(const rb of R.boards){
+  if(rb.In&&rb.maxIn&&!(rb.In>rb.maxIn))rb.msgs.push(['w','CB nhánh không lớn hơn CB thiết bị lớn nhất']);
+  for(const r of rb.loads){
+   if(r.du==null)continue;
+   r.duTot=(M.du||0)+(rb.du||0)+r.du;
+   if(r.duTot>+st.dUtot)r.msgs.push(['e','ΔU tổng '+fmt(r.duTot,2)+'% > '+st.dUtot+'%']);
+  }
+ }
+ return R;
+}
+
+/* ===================== VẬT TƯ ===================== */
+function bom(R){
+ const w=1+(+ST().waste||0)/100,cb={},cv={},cvv={},con={},encl={};
+ const add=(m,k,q,where)=>{if(!m[k])m[k]={q:0,w:new Set()};m[k].q+=q;if(where)m[k].w.add(where);};
+ const M=R.main,pr=S.project;
+ if(M.In)add(cb,M.cb,1,'Tủ tổng');
+ if(M.S){add(cvv,(M.three?'CVV 4×':'CVV 2×')+fmt(M.S),(+pr.len||0)*w);add(cv,M.PE,(+pr.len||0)*w);add(con,M.conduit,(+pr.len||0)*w);}
+ if(M.encl)add(encl,'Tủ điện tổng ≥ '+M.encl+' module',1);
+ for(const rb of R.boards){
+  const nm=rb.b.name;
+  if(rb.In)add(cb,rb.cb,2,'Tủ tổng + đầu '+nm);
+  if(rb.S){const L=(+rb.b.len||0)*w;add(cvv,'CVV 2×'+fmt(rb.S),L);add(cv,rb.PE,L);add(con,rb.conduit,L);}
+  if(rb.Pd>0)add(encl,'Tủ điện nhánh ≥ '+rb.encl+' module',1,nm);
+  for(const r of rb.loads){
+   if(r.In)add(cb,r.cb,1,nm);
+   if(r.S){const L=(+r.ld.len||0)*w;add(cv,r.S,2*L);add(cv,r.PE,L);add(con,r.conduit,L);}
+  }
+ }
+ return {cb,cv,cvv,con,encl};
+}
+
+/* ===================== TIỆN ÍCH ===================== */
+function fmt(x,d){if(x==null||isNaN(x))return '';if(d==null)return String(+(+x).toFixed(2)).replace('.',',');return (+x).toLocaleString('vi-VN',{minimumFractionDigits:d,maximumFractionDigits:d});}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function msgs(a){return a&&a.length?'<div class="msg">'+a.map(m=>'<div class="'+m[0]+'">'+(m[0]==='e'?'✖ ':m[0]==='w'?'⚠ ':'ℹ ')+esc(m[1])+'</div>').join('')+'</div>':'';}
+function status(a){if(!a||!a.length)return '<span class="pill p-ok">OK</span>';if(a.some(m=>m[0]==='e'))return '<span class="pill p-e">Lỗi</span>';if(a.some(m=>m[0]==='w'))return '<span class="pill p-w">Lưu ý</span>';return '<span class="pill p-ok">OK</span>';}
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),1800);}
+function inp(k,val,attrs,type){return '<input data-k="'+k+'" '+attrs+' type="'+(type||'text')+'" value="'+esc(val)+'">';}
+function num(k,val,attrs,step){return '<input data-k="'+k+'" '+attrs+' type="number" step="'+(step||'any')+'" min="0" value="'+esc(val)+'">';}
+function devSelect(k,cur,attrs){
+ const g={};S.library.forEach(d=>{(g[d.group||'Khác']=g[d.group||'Khác']||[]).push(d);});
+ let h='<select data-k="'+k+'" '+attrs+' style="max-width:260px"><option value="">— chọn thiết bị —</option>';
+ for(const n in g){h+='<optgroup label="'+esc(n)+'">'+g[n].map(d=>'<option value="'+d.id+'"'+(d.id===cur?' selected':'')+'>'+esc(d.name)+' ('+d.P+'W)</option>').join('')+'</optgroup>';}
+ return h+'</select>';
+}
+const phBadge=p=>'<span class="ph ph'+p+'">'+p+'</span>';
+
+/* ===================== GIAO DIỆN: THIẾT KẾ ===================== */
+function renderDesign(R){
+ const pr=S.project,M=R.main,three=pr.supply==='3P';
+ let h='<div class="card"><div class="hd"><h3>Thông tin dự án &amp; nguồn cấp</h3></div><div class="bd"><div class="grid">'+
+  '<label class="f">Tên dự án / công trình'+inp('prj.name',pr.name,'data-f="prj.name" class="w"')+'</label>'+
+  '<label class="f">Nguồn cấp<select data-k="prj.supply" data-f="prj.supply"><option value="1P"'+(three?'':' selected')+'>1 pha 220V</option><option value="3P"'+(three?' selected':'')+'>3 pha 380V</option></select></label>'+
+  '<label class="f">Hệ số đồng thời toàn nhà k_đt'+num('prj.kdt',pr.kdt,'data-f="prj.kdt"',0.05)+'</label>'+
+  '<label class="f">Chiều dài cáp công tơ → tủ tổng (m)'+num('prj.len',pr.len,'data-f="prj.len"',1)+'</label>'+
+  '</div></div></div>';
+ // tủ tổng
+ h+='<div class="card"><div class="hd"><h3>CẤP 1 – TỦ ĐIỆN TỔNG</h3>'+status(M.msgs)+'<span style="flex:1"></span>'+
+  (three?'<button data-act="balance" class="noprint">⚖ Tự cân pha</button>':'')+'</div><div class="bd">';
+ if(M.Ptt){
+  h+='<div class="kpi">'+
+   '<div><small>Tổng P đặt</small><b>'+fmt(M.Pd/1000,2)+' kW</b></div>'+
+   '<div><small>Σ Ptt các tủ nhánh</small><b>'+fmt(M.Psum/1000,2)+' kW</b></div>'+
+   '<div><small>Ptt toàn nhà (×'+fmt(pr.kdt)+')</small><b>'+fmt(M.Ptt/1000,2)+' kW</b></div>'+
+   '<div><small>Cosφ trung bình</small><b>'+fmt(M.cos,2)+'</b></div>'+
+   '<div><small>Dòng Itt '+(three?'(pha lớn nhất)':'')+'</small><b>'+fmt(M.Ib,1)+' A</b></div>'+
+   '<div><small>CB tổng</small><b class="res">'+esc(M.cb||'—')+'</b></div>'+
+   '<div><small>Cáp nguồn</small><b class="res">'+esc(M.wire||'—')+'</b></div>'+
+   '<div><small>Ống luồn / ΔU cáp nguồn</small><b>'+(M.conduit||'—')+' / '+fmt(M.du,2)+'%</b></div>'+
+   '<div><small>Vỏ tủ tổng (gợi ý)</small><b>≥ '+M.encl+' module</b></div>'+
+   (three?'<div><small>Lệch pha</small><b>'+fmt(M.unbal,0)+' %</b></div>':'')+
+  '</div>';
+  if(three)h+='<div class="sum" style="margin-top:8px">'+['A','B','C'].map(p=>phBadge(p)+' P = <b>'+fmt(M.phase[p].P/1000,2)+' kW</b> – I = <b>'+fmt(M.phase[p].I,1)+' A</b>').join('&nbsp;&nbsp;&nbsp;')+'</div>';
+ }else h+='<p class="hint">Chưa có tủ nhánh nào có tải.</p>';
+ h+=msgs(M.msgs)+'</div></div>';
+ // tủ nhánh
+ R.boards.forEach((rb,bi)=>{
+  const b=rb.b;
+  h+='<div class="card"><div class="hd"><h3>CẤP 2 – Tủ nhánh '+(bi+1)+'</h3>'+inp('b.name.'+b.id,b.name,'data-f="b.name" data-b="'+b.id+'" style="width:240px;font-weight:bold"')+
+   '<label class="f" style="flex-direction:row;align-items:center">k_đt&nbsp;'+num('b.kdt.'+b.id,b.kdt,'data-f="b.kdt" data-b="'+b.id+'" style="width:60px"',0.05)+'</label>'+
+   '<label class="f" style="flex-direction:row;align-items:center">Cáp trục (m)&nbsp;'+num('b.len.'+b.id,b.len,'data-f="b.len" data-b="'+b.id+'" style="width:60px"',1)+'</label>'+
+   (three?'<label class="f" style="flex-direction:row;align-items:center">Pha&nbsp;<select data-k="b.ph.'+b.id+'" data-f="b.phase" data-b="'+b.id+'">'+['A','B','C'].map(p=>'<option'+((b.phase||'A')===p?' selected':'')+'>'+p+'</option>').join('')+'</select></label>':'')+
+   status(rb.msgs.concat(...rb.loads.map(r=>r.msgs.filter(m=>m[0]!=='i'))))+'<span style="flex:1"></span>'+
+   '<button class="sm noprint" data-act="up" data-b="'+b.id+'">▲</button><button class="sm noprint" data-act="down" data-b="'+b.id+'">▼</button>'+
+   '<button class="sm noprint" data-act="dupB" data-b="'+b.id+'">Nhân bản</button><button class="sm del noprint" data-act="delB" data-b="'+b.id+'">Xóa tủ</button></div><div class="bd">';
+  h+='<div class="tw"><table><thead><tr><th>#</th><th>Thiết bị</th><th class="n">SL</th><th class="n">Dài (m)</th><th class="n">P (W)</th><th class="n">Itt (A)</th><th>CB thiết bị</th><th>Dây dẫn</th><th>Ống</th><th class="n">ΔU lộ</th><th class="n">ΔU tổng</th><th>Ghi chú / cảnh báo</th><th class="noprint"></th></tr></thead><tbody>';
+  rb.loads.forEach((r,i)=>{const ld=r.ld;
+   h+='<tr><td class="c">'+(i+1)+'</td><td>'+devSelect('l.dev.'+ld.id,ld.devId,'data-f="l.devId" data-b="'+b.id+'" data-l="'+ld.id+'"')+'</td>'+
+    '<td class="n">'+num('l.qty.'+ld.id,ld.qty,'data-f="l.qty" data-b="'+b.id+'" data-l="'+ld.id+'" style="width:52px"',1)+'</td>'+
+    '<td class="n">'+num('l.len.'+ld.id,ld.len,'data-f="l.len" data-b="'+b.id+'" data-l="'+ld.id+'" style="width:58px"',1)+'</td>'+
+    '<td class="n">'+fmt(r.P,0)+'</td><td class="n">'+fmt(r.Ib,2)+'</td>'+
+    '<td class="res">'+esc(r.cb||'—')+'</td><td class="res">'+esc(r.wire||'—')+'</td><td>'+(r.conduit||'')+'</td>'+
+    '<td class="n">'+(r.du!=null?fmt(r.du,2)+'%':'')+'</td><td class="n">'+(r.duTot!=null?fmt(r.duTot,2)+'%':'')+'</td>'+
+    '<td>'+msgs(r.msgs)+(r.d&&r.d.note?'<div class="msg"><div class="i">'+esc(r.d.note)+'</div></div>':'')+'</td>'+
+    '<td class="noprint"><button class="sm del" data-act="delL" data-b="'+b.id+'" data-l="'+ld.id+'" title="Xóa">✕</button></td></tr>';
+  });
+  h+='</tbody></table></div><button class="sm noprint" style="margin-top:6px" data-act="addL" data-b="'+b.id+'">+ Thêm thiết bị</button>';
+  if(rb.Pd>0)h+='<div class="sum" style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)">'+
+   '<span>P đặt: <b>'+fmt(rb.Pd,0)+' W</b></span><span>Ptt: <b>'+fmt(rb.Ptt,0)+' W</b></span><span>Cosφ: <b>'+fmt(rb.cos,2)+'</b></span>'+
+   '<span>Itt nhánh: <b>'+fmt(rb.Ib,2)+' A</b></span><span>CB nhánh (tại tủ tổng &amp; đầu tủ): <b>'+esc(rb.cb||'—')+'</b></span>'+
+   '<span>Cáp trục: <b>'+esc(rb.wire||'—')+'</b> ống '+(rb.conduit||'')+'</span><span>ΔU trục: <b>'+fmt(rb.du,2)+'%</b></span><span>Vỏ tủ: <b>≥ '+rb.encl+' module</b></span></div>';
+  h+=msgs(rb.msgs)+'</div></div>';
+ });
+ h+='<button class="pri noprint" data-act="addB">+ Thêm tủ nhánh</button>';
+ return h;
+}
+
+/* ===================== SƠ ĐỒ ===================== */
+function renderSLD(R){
+ const M=R.main,pr=S.project,three=pr.supply==='3P';
+ let h='<div class="card"><div class="hd"><h3>Sơ đồ nguyên lý cấp điện – '+esc(pr.name)+'</h3></div><div class="bd"><div class="sld">';
+ h+='<div class="box" style="border-style:dashed"><h4>Công tơ điện lực</h4>'+(three?'3 pha 380/220V':'1 pha 220V')+'</div><div class="vline"></div>';
+ h+='<div style="font-size:11.5px;color:var(--mute)">'+esc(M.wire||'')+' – '+fmt(pr.len)+' m – ống '+(M.conduit||'')+' – ΔU '+fmt(M.du,2)+'%</div><div class="vline"></div>';
+ h+='<div class="box"><h4>TỦ ĐIỆN TỔNG</h4><div class="res">'+esc(M.cb||'—')+'</div><div style="font-size:11.5px">Ptt = '+fmt((M.Ptt||0)/1000,2)+' kW – Itt = '+fmt(M.Ib,1)+' A</div></div><div class="vline"></div>';
+ h+='<div class="bus">';
+ R.boards.forEach(rb=>{const b=rb.b;
+  h+='<div class="br"><div class="vline"></div><div style="font-size:11px;color:var(--mute);text-align:center">'+esc(rb.cb||'')+'<br>'+esc(rb.wire||'')+' – '+fmt(b.len)+'m</div><div class="vline"></div>'+
+   '<div class="box">'+(three?phBadge(b.phase||'A')+' ':'')+'<h4 style="display:inline">'+esc(b.name)+'</h4><div style="font-size:11.5px">CB đầu tủ: '+esc(rb.cb||'—')+'<br>Ptt '+fmt(rb.Ptt,0)+' W – '+fmt(rb.Ib,1)+' A</div></div><ul>'+
+   rb.loads.map(r=>'<li class="'+(r.d&&r.d.rcd?'rcd':'')+'"><b>'+esc(r.cb||'—')+'</b><br>'+esc(r.d?r.d.name:'(chưa chọn)')+(r.ld.qty>1?' ×'+r.ld.qty:'')+'<br><span style="color:var(--mute)">'+esc(r.wire||'')+' – '+fmt(r.ld.len)+'m</span></li>').join('')+'</ul></div>';
+ });
+ h+='</div><div class="legend">Viền xanh: MCB thường – Viền cam: RCBO chống giật 30mA. Dây PE (tiếp địa) đi kèm mọi lộ.</div></div></div></div>';
+ return h;
+}
+
+/* ===================== BẢNG KẾT QUẢ ===================== */
+function resultRows(R){
+ const M=R.main,pr=S.project,rows=[];
+ rows.push(['Tủ tổng','CB tổng cả nhà',fmt(M.Pd,0),fmt(M.Ptt,0),fmt(M.cos,2),fmt(M.Ib,2),M.cb||'',M.wire||'',M.conduit||'',fmt(pr.len),fmt(M.du,2),'',(M.msgs||[]).map(m=>m[1]).join('; ')]);
+ R.boards.forEach(rb=>{
+  rows.push(['Tủ tổng → '+rb.b.name,'CB nhánh / cáp trục',fmt(rb.Pd,0),fmt(rb.Ptt,0),fmt(rb.cos,2),fmt(rb.Ib,2),rb.cb||'',rb.wire||'',rb.conduit||'',fmt(rb.b.len),fmt(rb.du,2),'',rb.msgs.map(m=>m[1]).join('; ')]);
+  rb.loads.forEach(r=>rows.push([rb.b.name,(r.d?r.d.name:'(chưa chọn)')+(r.ld.qty>1?' ×'+r.ld.qty:''),fmt(r.P,0),'',fmt(r.cos,2),fmt(r.Ib,2),r.cb||'',r.wire||'',r.conduit||'',fmt(r.ld.len),fmt(r.du,2),fmt(r.duTot,2),r.msgs.map(m=>m[1]).join('; ')]));
+ });
+ return rows;
+}
+const RES_HDR=['Vị trí','Lộ / thiết bị','P đặt (W)','Ptt (W)','Cosφ','Itt (A)','Aptomat','Dây / cáp','Ống','Dài (m)','ΔU (%)','ΔU tổng (%)','Ghi chú'];
+function renderResult(R){
+ const rows=resultRows(R);
+ return '<div class="card"><div class="hd"><h3>Bảng kết quả chọn thiết bị bảo vệ &amp; dây dẫn</h3></div><div class="bd tw"><table><thead><tr>'+RES_HDR.map((x,i)=>'<th'+([2,3,4,5,9,10,11].includes(i)?' class="n"':'')+'>'+x+'</th>').join('')+'</tr></thead><tbody>'+
+  rows.map(r=>'<tr'+(r[0].startsWith('Tủ tổng')?' style="background:#f3f7fd;font-weight:bold"':'')+'>'+r.map((c,i)=>'<td'+([2,3,4,5,9,10,11].includes(i)?' class="n"':'')+'>'+esc(c)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div></div>';
+}
+
+/* ===================== VẬT TƯ ===================== */
+function bomRows(B){
+ const out=[],sortK=(a,b)=>parseFloat(a.replace(/[^\d.]/g,''))-parseFloat(b.replace(/[^\d.]/g,''));
+ const cbKeys=Object.keys(B.cb).sort((a,b)=>a.split(' ')[0].localeCompare(b.split(' ')[0])||(parseFloat(a.match(/(\d+)A/)[1])-parseFloat(b.match(/(\d+)A/)[1])));
+ cbKeys.forEach(k=>out.push(['Aptomat',k,'Cái',B.cb[k].q,[...B.cb[k].w].join(', ')]));
+ Object.keys(B.encl).sort().forEach(k=>out.push(['Vỏ tủ điện',k,'Cái',B.encl[k].q,[...B.encl[k].w].join(', ')]));
+ Object.keys(B.cvv).sort((a,b)=>{const f=k=>{const m=k.match(/(\d)×([\d,]+)/);return +m[1]*1000+parseFloat(m[2].replace(',','.'));};return f(a)-f(b);}).forEach(k=>out.push(['Cáp',k+' mm²','m',Math.ceil(B.cvv[k].q),'Cáp nguồn / cáp trục']));
+ Object.keys(B.cv).sort((a,b)=>a-b).forEach(k=>out.push(['Dây đơn','CV '+fmt(+k)+' mm²','m',Math.ceil(B.cv[k].q),'Pha + trung tính + PE']));
+ Object.keys(B.con).sort(sortK).forEach(k=>out.push(['Ống luồn','Ống PVC cứng '+k,'m',Math.ceil(B.con[k].q),'']));
+ return out;
+}
+function renderBOM(R){
+ const rows=bomRows(bom(R));
+ return '<div class="card"><div class="hd"><h3>Bảng tổng hợp vật tư</h3><span class="hint">Đã cộng hao hụt '+ST().waste+'% cho dây và ống. CB nhánh tính 2 cái/lộ (tại tủ tổng + đầu tủ nhánh).</span></div><div class="bd tw"><table><thead><tr><th>#</th><th>Nhóm</th><th>Quy cách</th><th>ĐVT</th><th class="n">Số lượng</th><th>Vị trí</th></tr></thead><tbody>'+
+  rows.map((r,i)=>'<tr><td class="c">'+(i+1)+'</td><td>'+esc(r[0])+'</td><td><b>'+esc(r[1])+'</b></td><td>'+r[2]+'</td><td class="n">'+fmt(r[3],0)+'</td><td style="font-size:11.5px">'+esc(r[4])+'</td></tr>').join('')+
+  '</tbody></table><p class="hint">Chưa gồm: thiết bị chống sét lan truyền (SPD), cầu đấu, thanh cái, cọc tiếp địa, hộp nối, phụ kiện ống.</p></div></div>';
+}
+
+/* ===================== THƯ VIỆN ===================== */
+function renderLib(){
+ const used=new Set();S.project.boards.forEach(b=>b.loads.forEach(l=>used.add(l.devId)));
+ let h='<div class="card"><div class="hd"><h3>Thư viện thiết bị điện dân dụng ('+S.library.length+')</h3><span style="flex:1"></span>'+
+  '<button class="sm" data-act="addDev">+ Thêm thiết bị</button><button class="sm" data-act="resetLib">Khôi phục mặc định</button></div><div class="bd tw">'+
+  '<p class="hint" style="margin-top:0">CB tối thiểu: dòng chọn CB không nhỏ hơn giá trị này (ổ cắm, điều hòa…). Để 0 nếu chỉ tính theo công suất. Sửa xong bấm Enter hoặc rời ô để cập nhật.</p>'+
+  '<table><thead><tr><th>#</th><th>Nhóm</th><th>Tên thiết bị</th><th class="n">P (W)</th><th class="n">Cosφ</th><th class="c">Chống giật (RCBO)</th><th class="n">CB tối thiểu (A)</th><th>Đặc tính CB</th><th>Ghi chú kỹ thuật</th><th></th></tr></thead><tbody>';
+ S.library.forEach((d,i)=>{const a='data-id="'+d.id+'"';
+  h+='<tr><td class="c">'+(i+1)+'</td><td>'+inp('d.g.'+d.id,d.group,'data-f="d.group" '+a+' style="width:110px"')+'</td><td>'+inp('d.n.'+d.id,d.name,'data-f="d.name" '+a+' style="width:250px"')+'</td>'+
+   '<td class="n">'+num('d.P.'+d.id,d.P,'data-f="d.P" '+a,10)+'</td><td class="n">'+num('d.c.'+d.id,d.cos,'data-f="d.cos" '+a+' style="width:60px"',0.01)+'</td>'+
+   '<td class="c"><input data-k="d.r.'+d.id+'" type="checkbox" data-f="d.rcd" '+a+(d.rcd?' checked':'')+'></td>'+
+   '<td class="n">'+num('d.i.'+d.id,d.imin,'data-f="d.imin" '+a+' style="width:60px"',1)+'</td>'+
+   '<td><select data-k="d.cv.'+d.id+'" data-f="d.curve" '+a+'>'+['B','C','D'].map(c=>'<option'+(d.curve===c?' selected':'')+'>'+c+'</option>').join('')+'</select></td>'+
+   '<td>'+inp('d.no.'+d.id,d.note,'data-f="d.note" '+a+' style="width:280px"')+'</td>'+
+   '<td>'+(used.has(d.id)?'<span class="hint">đang dùng</span>':'<button class="sm del" data-act="delDev" '+a+'>✕</button>')+'</td></tr>';
+ });
+ return h+'</tbody></table></div></div>';
+}
+
+/* ===================== THÔNG SỐ ===================== */
+function renderSet(){
+ const st=ST();
+ let h='<div class="card"><div class="hd"><h3>Thông số tính toán</h3><span style="flex:1"></span><button class="sm" data-act="resetSet">Khôi phục mặc định</button></div><div class="bd"><div class="grid">';
+ SET_META.forEach(([k,l,t])=>{
+  let c;
+  if(t==='sel')c='<select data-k="s.'+k+'" data-f="s" data-s="'+k+'">'+Object.keys(KTEMP).map(x=>'<option'+(+x===+st[k]?' selected':'')+'>'+x+'</option>').join('')+'</select>';
+  else if(t==='secsel')c='<select data-k="s.'+k+'" data-f="s" data-s="'+k+'">'+SECTIONS.slice(0,4).map(x=>'<option value="'+x+'"'+(+x===+st[k]?' selected':'')+'>'+fmt(x)+'</option>').join('')+'</select>';
+  else if(t==='cbsel')c='<select data-k="s.'+k+'" data-f="s" data-s="'+k+'">'+[6,10,16].map(x=>'<option'+(x===+st[k]?' selected':'')+'>'+x+'</option>').join('')+'</select>';
+  else if(t==='yn')c='<select data-k="s.'+k+'" data-f="s" data-s="'+k+'"><option value="1"'+(+st[k]?' selected':'')+'>Áp dụng</option><option value="0"'+(+st[k]?'':' selected')+'>Không (chỉ theo IEC)</option></select>';
+  else c=num('s.'+k,st[k],'data-f="s" data-s="'+k+'"',t);
+  h+='<label class="f">'+l+c+'</label>';
+ });
+ h+='</div><p class="hint">Hệ số hiệu chỉnh khả năng tải hiện tại: k_nhiệt độ ('+st.temp+'°C) × k_nhóm = <b>'+fmt(kt(),3)+'</b>. Iz thực tế = Iz bảng × hệ số này.</p></div></div>';
+ h+='<div class="card"><div class="hd"><h3>Bảng tra khả năng tải dây dẫn (ruột đồng, cách điện PVC, 30°C)</h3></div><div class="bd tw"><table><thead><tr><th>Tiết diện (mm²)</th><th class="n">CV đơn trong ống – B1, 2 dây (A)</th><th class="n">CVV nhiều lõi – B2, 2 dây (A)</th><th class="n">CVV – B2, 3 dây mang tải (A)</th><th class="n">Iz CV sau hiệu chỉnh (A)</th><th class="n">CB lớn nhất cho CV</th><th>Ống (dây đơn, 3 sợi)</th><th class="n">PE tối thiểu</th></tr></thead><tbody>'+
+  SECTIONS.map(s=>{const iz=IZ.CV[s]*kt();const cb=[...RATINGS].reverse().find(r=>r<=iz);return '<tr><td><b>'+fmt(s)+'</b></td><td class="n">'+fmt(IZ.CV[s])+'</td><td class="n">'+fmt(IZ.CVV2[s])+'</td><td class="n">'+fmt(IZ.CVV3[s])+'</td><td class="n">'+fmt(iz,1)+'</td><td class="n">'+(cb?cb+'A':'—')+'</td><td>'+conduitCV(s)+'</td><td class="n">'+fmt(peOf(s))+'</td></tr>';}).join('')+
+  '</tbody></table><p class="hint">Nguồn: IEC 60364-5-52 / TCVN 7447-5-52:2012, Bảng B.52.2 – B.52.5 (giá trị làm tròn). Hệ số nhiệt độ PVC: 25°C 1,03 – 30°C 1,00 – 35°C 0,94 – 40°C 0,87 – 45°C 0,79 – 50°C 0,71. Dây PE: S ≤ 16 → PE = S; 16 &lt; S ≤ 35 → 16; S &gt; 35 → S/2.</p></div></div>';
+ h+='<div class="card"><div class="hd"><h3>Dãy định mức Aptomat (A)</h3></div><div class="bd">'+RATINGS.join(' – ')+'<p class="hint">Điều kiện chọn: Itt × hệ số ≤ I<sub>n</sub> ≤ I<sub>z</sub> (dây). CB nhánh luôn lớn hơn CB thiết bị lớn nhất trong tủ ít nhất 1 cấp; CB tổng lớn hơn CB nhánh lớn nhất ít nhất 1 cấp.</p></div></div>';
+ return h;
+}
+
+/* ===================== HƯỚNG DẪN ===================== */
+function renderHelp(){
+ return '<div class="card"><div class="bd doc">'+
+ '<h3>Cách dùng</h3><ol><li><b>Thông số</b>: kiểm tra điện áp, nhiệt độ môi trường (mặc định 35°C), hệ số chọn CB, giới hạn sụt áp.</li>'+
+ '<li><b>Thư viện</b>: thêm/sửa thiết bị (công suất, cosφ, có cần RCBO không, CB tối thiểu).</li>'+
+ '<li><b>Thiết kế</b>: chọn nguồn 1 pha/3 pha, thêm tủ nhánh, thêm thiết bị vào từng tủ, nhập số lượng và chiều dài dây. Kết quả tính ngay.</li>'+
+ '<li>Xem <b>Sơ đồ nguyên lý</b>, <b>Bảng kết quả</b>, <b>Vật tư</b>. Xuất Excel hoặc In/PDF.</li>'+
+ '<li><b>Lưu (.json)</b> để lưu dự án thành file; <b>Mở (.json)</b> để mở lại. Dữ liệu cũng được tự lưu trên trình duyệt của máy đang dùng.</li></ol>'+
+ '<h3>Công thức</h3><ul>'+
+ '<li>Dòng tính toán thiết bị: I<sub>tt</sub> = P / (U<sub>pha</sub> × cosφ).</li>'+
+ '<li>Dòng chọn CB thiết bị = max(I<sub>tt</sub> × k<sub>TB</sub>; CB tối thiểu) → chọn CB định mức nhỏ nhất ≥ giá trị này.</li>'+
+ '<li>Tủ nhánh: P<sub>tt</sub> = max(k<sub>đt</sub> × ΣP; P thiết bị lớn nhất); cosφ<sub>tb</sub> = ΣP / Σ(P/cosφ); CB nhánh ≥ I<sub>tt</sub> × k<sub>nhánh</sub> và lớn hơn CB thiết bị lớn nhất 1 cấp.</li>'+
+ '<li>Tủ tổng: P<sub>tt</sub> = k<sub>đt toàn nhà</sub> × ΣP<sub>tt nhánh</sub>. Với 3 pha: tính riêng từng pha, CB 4P chọn theo pha tải lớn nhất.</li>'+
+ '<li>Chọn dây: I<sub>z</sub> × k<sub>nhiệt</sub> × k<sub>nhóm</sub> ≥ I<sub>n</sub> (CB) và ΔU ≤ giới hạn; nếu không đạt tự tăng tiết diện.</li>'+
+ '<li>Sụt áp: 1 pha ΔU% = 2·L·I·(ρ/S·cosφ + x·sinφ)/U × 100; 3 pha thay 2 bằng √3, U = 380V. ρ = 0,0225 Ω·mm²/m; x = 0,08 mΩ/m.</li></ul>'+
+ '<h3>Lưu ý</h3><ul><li>Kết quả phục vụ thiết kế sơ bộ nhà ở; công trình lớn cần kiểm tra thêm dòng ngắn mạch, khả năng cắt Icu, phối hợp chọn lọc theo catalogue hãng.</li>'+
+ '<li>Mạch ổ cắm, nhà tắm, ngoài trời, bình nóng lạnh, máy giặt, bơm: dùng RCBO/RCCB 30mA (TCVN 9207:2012, IEC 60364-4-41).</li>'+
+ '<li>Tham chiếu: TCVN 9206:2012, TCVN 9207:2012, TCVN 7447 (IEC 60364).</li></ul></div></div>';
+}
+
+/* ===================== RENDER ===================== */
+let R;
+function renderAll(){
+ const ae=document.activeElement,k=ae&&ae.dataset?ae.dataset.k:null;
+ R=compute();
+ document.getElementById('hdrPrj').textContent=S.project.name+' – '+(S.project.supply==='3P'?'3 pha 380V':'1 pha 220V');
+ document.getElementById('design').innerHTML=renderDesign(R);
+ document.getElementById('sld').innerHTML=renderSLD(R);
+ document.getElementById('result').innerHTML=renderResult(R);
+ document.getElementById('bom').innerHTML=renderBOM(R);
+ document.getElementById('lib').innerHTML=renderLib();
+ document.getElementById('set').innerHTML=renderSet();
+ document.getElementById('help').innerHTML=renderHelp();
+ if(k){const el=document.querySelector('[data-k="'+CSS.escape(k)+'"]');if(el)el.focus();}
+}
+
+/* ===================== SỰ KIỆN ===================== */
+const findB=id=>S.project.boards.find(b=>b.id===id);
+document.addEventListener('change',e=>{
+ const t=e.target,f=t.dataset.f;if(!f)return;
+ const v=t.type==='checkbox'?t.checked:(t.type==='number'?(t.value===''?0:+t.value):t.value);
+ if(f.startsWith('prj.'))S.project[f.slice(4)]=v;
+ else if(f.startsWith('b.')){findB(t.dataset.b)[f.slice(2)]=v;}
+ else if(f.startsWith('l.')){const ld=findB(t.dataset.b).loads.find(l=>l.id===t.dataset.l);ld[f.slice(2)]=v;}
+ else if(f.startsWith('d.')){const d=S.library.find(x=>x.id===t.dataset.id);d[f.slice(2)]=v;}
+ else if(f==='s'){S.settings[t.dataset.s]=+v;}
+ save();renderAll();
+});
+document.addEventListener('click',e=>{
+ const t=e.target.closest('[data-act],[data-tab]');if(!t)return;
+ if(t.dataset.tab){document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===t));document.querySelectorAll('main section').forEach(s=>s.classList.toggle('on',s.id===t.dataset.tab));window.scrollTo(0,0);return;}
+ const a=t.dataset.act,pr=S.project,bs=pr.boards,bi=bs.findIndex(b=>b.id===t.dataset.b);
+ switch(a){
+  case 'addB':bs.push({id:uid(),name:'Tủ nhánh mới',kdt:0.7,len:15,phase:'A',loads:[]});break;
+  case 'delB':if(!confirm('Xóa tủ "'+bs[bi].name+'"?'))return;bs.splice(bi,1);break;
+  case 'dupB':{const c=JSON.parse(JSON.stringify(bs[bi]));c.id=uid();c.name+=' (bản sao)';c.loads.forEach(l=>l.id=uid());bs.splice(bi+1,0,c);break;}
+  case 'up':if(bi>0)[bs[bi-1],bs[bi]]=[bs[bi],bs[bi-1]];break;
+  case 'down':if(bi<bs.length-1)[bs[bi+1],bs[bi]]=[bs[bi],bs[bi+1]];break;
+  case 'addL':bs[bi].loads.push({id:uid(),devId:'',qty:1,len:15});break;
+  case 'delL':bs[bi].loads=bs[bi].loads.filter(l=>l.id!==t.dataset.l);break;
+  case 'balance':{const act=R.boards.filter(x=>x.Ptt>0).sort((x,y)=>y.Ptt-x.Ptt),load={A:0,B:0,C:0};
+   act.forEach(x=>{const p=['A','B','C'].sort((m,n)=>load[m]-load[n])[0];x.b.phase=p;load[p]+=x.Ptt;});toast('Đã cân pha theo Ptt');break;}
+  case 'addDev':S.library.push({id:uid(),group:'Khác',name:'Thiết bị mới',P:1000,cos:0.9,rcd:false,imin:0,curve:'C',note:''});break;
+  case 'delDev':S.library=S.library.filter(d=>d.id!==t.dataset.id);break;
+  case 'resetLib':if(!confirm('Khôi phục thư viện mặc định? Thiết bị tự thêm sẽ mất; các lộ dùng thiết bị không còn sẽ báo "chưa chọn".'))return;
+   {const old={};S.library.forEach(d=>old[d.id]=d.name);S.library=defLib();const by={};S.library.forEach(d=>by[d.name]=d.id);
+    bs.forEach(b=>b.loads.forEach(l=>l.devId=by[old[l.devId]]||''));}break;
+  case 'resetSet':S.settings={...DEF_SET};break;
+  case 'new':if(!confirm('Tạo dự án mới (trống)? Dự án hiện tại sẽ bị thay thế – hãy Lưu .json trước nếu cần.'))return;
+   S.project={name:'Dự án mới',supply:'1P',kdt:0.75,len:15,boards:[{id:uid(),name:'Tủ nhánh 1',kdt:0.7,len:15,phase:'A',loads:[{id:uid(),devId:'',qty:1,len:15}]}]};break;
+  case 'open':document.getElementById('fileOpen').click();return;
+  case 'saveJson':download(JSON.stringify(S,null,1),fname('json'),'application/json');return;
+  case 'xls':exportXLS();return;
+  case 'print':window.print();return;
+ }
+ save();renderAll();
+});
+document.getElementById('fileOpen').addEventListener('change',e=>{
+ const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+ rd.onload=()=>{try{const o=JSON.parse(rd.result);if(!o.project||!o.library)throw 0;o.settings={...DEF_SET,...o.settings};S=o;save();renderAll();toast('Đã mở '+f.name);}catch(x){alert('File không đúng định dạng dự án.');}};
+ rd.readAsText(f,'utf-8');e.target.value='';
+});
+function fname(ext){return (S.project.name||'du-an').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').replace(/[^\w-]+/g,'_')+'.'+ext;}
+function download(data,name,type){const b=new Blob([data],{type});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
+
+/* ===================== XUẤT EXCEL (SpreadsheetML) ===================== */
+function exportXLS(){
+ const x=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const cell=v=>{if(typeof v==='number'&&isFinite(v))return '<Cell><Data ss:Type="Number">'+v+'</Data></Cell>';
+  const n=typeof v==='string'&&/^-?\d{1,3}(\.\d{3})*(,\d+)?$|^-?\d+(,\d+)?$/.test(v)?+v.replace(/\./g,'').replace(',','.'):null;
+  return n!==null&&v!==''?'<Cell><Data ss:Type="Number">'+n+'</Data></Cell>':'<Cell><Data ss:Type="String">'+x(v)+'</Data></Cell>';};
+ const sheet=(name,hdr,rows)=>'<Worksheet ss:Name="'+x(name)+'"><Table>'+'<Row>'+hdr.map(h=>'<Cell ss:StyleID="h"><Data ss:Type="String">'+x(h)+'</Data></Cell>').join('')+'</Row>'+rows.map(r=>'<Row>'+r.map(cell).join('')+'</Row>').join('')+'</Table></Worksheet>';
+ const st=ST(),pr=S.project;
+ const info=[['Dự án',pr.name],['Nguồn',pr.supply==='3P'?'3 pha 380V':'1 pha 220V'],['k_đt toàn nhà',pr.kdt],['Nhiệt độ (°C)',st.temp],['Hệ số hiệu chỉnh Iz',+kt().toFixed(3)],['ΔU tổng tối đa (%)',st.dUtot],['Ngày xuất',new Date().toLocaleString('vi-VN')]];
+ const xml='<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'+
+  '<Styles><Style ss:ID="Default"><Font ss:FontName="Arial" ss:Size="10"/></Style><Style ss:ID="h"><Font ss:FontName="Arial" ss:Bold="1"/><Interior ss:Color="#DDEBF7" ss:Pattern="Solid"/></Style></Styles>'+
+  sheet('Thong_tin',['Mục','Giá trị'],info)+sheet('Ket_qua',RES_HDR,resultRows(R))+
+  sheet('Vat_tu',['Nhóm','Quy cách','ĐVT','Số lượng','Vị trí'],bomRows(bom(R)))+
+  sheet('Thu_vien',['Nhóm','Tên','P (W)','Cosφ','Chống giật','CB tối thiểu (A)','Đặc tính','Ghi chú'],S.library.map(d=>[d.group,d.name,+d.P,+d.cos,d.rcd?'Có':'Không',+d.imin,d.curve,d.note]))+
+  '</Workbook>';
+ download(xml,fname('xls'),'application/vnd.ms-excel');toast('Đã xuất Excel');
+}
+
+renderAll();
+</script>
+</body>
+</html>
