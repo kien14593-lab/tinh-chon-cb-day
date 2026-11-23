@@ -5,14 +5,14 @@ Web app chạy hoàn toàn trên trình duyệt (1 file HTML, không cần cài 
 🔗 **Dùng thử:** https://kien14593-lab.github.io/tinh-chon-cb-day/
 
 ## Tính năng
-- Nguồn 1 pha 220V hoặc 3 pha 380V (chia tủ theo pha A/B/C, nút **Tự cân pha**, báo lệch pha).
-- Thư viện ~50 thiết bị dân dụng (sửa/thêm được): công suất, cosφ, có cần RCBO chống giật, CB tối thiểu.
-- Tự chọn CB thiết bị → CB nhánh → CB tổng, đảm bảo chọn lọc (mỗi cấp lớn hơn ít nhất 1 bậc).
-- Chọn dây theo khả năng tải (IEC 60364-5-52, hiệu chỉnh nhiệt độ & nhóm mạch) **và** sụt áp; tự tăng tiết diện khi cần.
-- Sơ đồ nguyên lý, bảng kết quả.
-- **Bóc tách vật tư chi tiết**: aptomat, SPD, vỏ tủ + thanh cái N/PE, cáp/dây theo tiết diện và màu (pha/trung tính/PE), đầu cos, ống + khớp nối + kẹp + co/cút, ổ cắm, công tắc, đế âm, hộp nối, hệ tiếp địa. Định mức bóc chỉnh được, xem theo từng tủ, nhập đơn giá để ra dự toán.
-- Điện 1 pha: giới hạn CB tổng theo CB điện lực tại công tơ (mặc định 63A), tự tính hệ số đồng thời tối đa cho phép.
-- Xuất Excel, In/PDF, Lưu/Mở dự án dạng `.json`. Dữ liệu tự lưu trên trình duyệt của từng máy.
+- Cấu trúc **Tủ tổng → Tủ nhánh → Mạch → Điểm**, mạch chia 3 kiểu cấp nguồn: **Chiếu sáng** (đèn, quạt trần qua công tắc), **Ổ cắm** (tải sinh hoạt ≤ 2.000W), **Mạch riêng** (điều hòa, bình nóng lạnh, bếp từ, bơm… có thể qua công tắc công suất 20–30A).
+- 3 kiểu đấu mạch: **mạch vòng**, **hình tia**, **phân nhánh (trục)**.
+- Công tắc 1–4 hạt (1 chiều, 2 chiều, chiết áp), ổ cắm đơn/đôi, thường/chống nước.
+- **Khối lượng dây – ống theo cao độ**: trần bê tông, trần giả, trục tường, tủ điện, cao độ công tắc/ổ cắm/thiết bị (sửa được); số sợi L/N/PE theo đoạn, chừa đấu nối tại đế/hộp và tủ, dự phòng ống, hao hụt dây, quy đổi cuộn theo màu; cỡ ống theo hệ số lấp đầy 40%.
+- Nguồn 1 pha / 3 pha (tự cân pha); điện 1 pha giới hạn CB tổng theo CB điện lực (mặc định 63A), tự tính hệ số đồng thời tối đa.
+- Chọn CB và dây theo IEC 60364-5-52 (hiệu chỉnh nhiệt độ, nhóm mạch) và sụt áp.
+- **Bóc vật tư**: aptomat, SPD, tủ + thanh cái, cáp/dây theo màu, đầu cos, ống + măng sông + cút + kẹp, công tắc/mặt/hạt, ổ cắm, đế âm, hộp nối, đèn – quạt, tiếp địa; nhập đơn giá ra dự toán.
+- Sơ đồ nguyên lý, xuất Excel, In/PDF, Lưu/Mở dự án `.json`.
 
 ## Cách dùng
 1. Mở link dùng thử, hoặc tải `index.html` về và mở bằng Chrome/Edge.
