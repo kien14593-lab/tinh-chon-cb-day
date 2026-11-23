@@ -11,6 +11,7 @@ Web app chạy hoàn toàn trên trình duyệt (1 file HTML, không cần cài 
 - **Nhập nhanh theo AutoCAD**: mỗi mạch chỉ nhập 1 chiều dài mặt bằng (đo theo layer, ví dụ `E-T1-CS1`); dán thẳng bảng DATAEXTRACTION (Layer, Length) để điền tự động. Đoạn đi đứng tự cộng theo cao độ.
 - Tuyến đi dây theo ký hiệu bản vẽ: AT (âm tường/sàn), TT (trên trần giả), ĐN (ngầm đất), lắp nổi; ống PVC cứng / ruột gà / HDPE / EMT; cáp nguồn CXV.
 - **Thư viện vật tư & đơn giá**: nhập giá 1 lần dùng cho mọi dự án; xuất/nhập bảng giá .csv.
+- **Bóc dây – ống theo phương pháp VNK** (mặc định): khối lượng = (mặt bằng + mặt đứng) × hệ số (Kd 1,2; Ko 1,1 / 1,05); dây pha xuống công tắc theo số hạt, N/PE đi thẳng tới đèn, ống mềm xuống đèn; ổ cắm 3 trường hợp đi dây. Có thể chuyển sang kiểu chi tiết.
 - **Khối lượng dây – ống theo cao độ**: trần bê tông, trần giả, trục tường, tủ điện, cao độ công tắc/ổ cắm/thiết bị (sửa được); số sợi L/N/PE theo đoạn, chừa đấu nối tại đế/hộp và tủ, dự phòng ống, hao hụt dây, quy đổi cuộn theo màu; cỡ ống theo hệ số lấp đầy 40%.
 - Nguồn 1 pha / 3 pha (tự cân pha); điện 1 pha giới hạn CB tổng theo CB điện lực (mặc định 63A), tự tính hệ số đồng thời tối đa.
 - Chọn CB và dây theo IEC 60364-5-52 (hiệu chỉnh nhiệt độ, nhóm mạch) và sụt áp.

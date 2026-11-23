@@ -186,7 +186,7 @@ const DEF_SET={U1:220,U3:380,temp:35,kgrp:1,kDev:1.25,kBr:1.2,kMain:1.15,dUdev:3
  directRule:1,minCBDirect:20,minSDirect:4,kRing:1.6,
  Hc:3.3,Hf:3.0,Htruc:2.4,Htu:1.4,acGap:0.15,whOnCeil:1,
  mainCable:'CXV',mainPipe:'HDPE',
- brOff:0.5,swGap:0.5,chuaBox:0.25,chuaTu:0.75,dpOng:12,waste:10,roll:100,fill:40,lightPE:0,elbowPerPt:2,
+ qtyMode:'vnk',Kd:1.2,KoL:1.1,KoS:1.05,verQ:4,brOff:0.5,swGap:0.5,chuaBox:0.25,chuaTu:0.75,dpOng:12,waste:10,roll:100,fill:40,lightPE:1,elbowPerPt:2,
  pipeLen:2.92,clampPerM:1,cosMinS:4,spd:1,earth:1,rods:3,bareS:25,bareLen:10,earthLen:10,auxPct:5};
 const SET_GROUPS=[
  ['Điện áp – môi trường – hệ số chọn',[
@@ -207,8 +207,9 @@ const SET_GROUPS=[
   ['Hc','Trần bê tông',0.05],['Hf','Trần giả (0 = không có)',0.05],['Htruc','Ống gen đi trên tường',0.05],['Htu','Tủ điện',0.05],
   ['acGap','Dàn lạnh: mép trên cách trần giả (m)',0.05],['whOnCeil','Bình nóng lạnh treo trên trần giả','yn']]],
  ['Định mức bóc dây – ống',[
-  ['dpOng','Dự phòng ống cho uốn, tránh dầm, cắt nối (%)',1],['waste','Hao hụt dây/cáp (%)',1],['roll','Chiều dài 1 cuộn dây (m)',1],
-  ['chuaBox','Chừa đấu nối tại mỗi đế/hộp (m/sợi)',0.05],['chuaTu','Chừa tại tủ điện (m/sợi)',0.05],
+  ['qtyMode','Cách tính hệ số','qmode'],['Kd','Kiểu VNK: hệ số đo bóc dây Kd',0.05],['KoL','Kiểu VNK: hệ số ống mạch chiếu sáng Ko',0.05],['KoS','Kiểu VNK: hệ số ống ổ cắm / mạch riêng Ko',0.05],
+  ['dpOng','Kiểu chi tiết: dự phòng ống (%)',1],['waste','Hao hụt dây (kiểu chi tiết) và cáp trục, cáp nguồn (%)',1],['roll','Chiều dài 1 cuộn dây (m)',1],
+  ['chuaBox','Kiểu chi tiết: chừa tại mỗi đế/hộp (m/sợi)',0.05],['chuaTu','Kiểu chi tiết: chừa tại tủ (m/sợi)',0.05],
   ['brOff','Đoạn rẽ từ hộp nối trục vào điểm (m)',0.1],['swGap','Công tắc công suất → thiết bị, phần ngang (m)',0.1],
   ['fill','Hệ số lấp đầy ống tối đa (%)',1],['pipeLen','Chiều dài 1 cây ống cứng (m)',0.01],['clampPerM','Kẹp đỡ ống (cái/m)',0.1],['elbowPerPt','Cút 90° (cái/điểm công tắc, ổ cắm, thiết bị)',1]]],
  ['Phụ kiện tủ – tiếp địa – chi phí',[
@@ -285,8 +286,8 @@ function defLib(){return DEF_LIB.map((r,i)=>({id:'D'+String(i+1).padStart(3,'0')
 
 const CTYPE={light:'Chiếu sáng',socket:'Ổ cắm',direct:'Mạch riêng'};
 const CODE={light:'CS',socket:'OC',direct:'R'};
-const TOPO={radial:'Hình tia',branch:'Phân nhánh / nối tiếp',ring:'Mạch vòng'};
-const TOPO_OK={light:['branch','radial'],socket:['branch','ring','radial'],direct:['radial']};
+const TOPO={radial:'Hình tia',branch:'Nối tiếp – mỗi ổ xuống/lên (TH2 trần, TH3 sàn)',ring:'Mạch vòng',drop1:'Xuống 1 lần rồi đi ngang (TH1)'};
+const TOPO_OK={light:['branch','radial'],socket:['branch','drop1','ring','radial'],direct:['radial']};
 const SWT={c1:'1 chiều',c2:'2 chiều',dim:'Chiết áp'};
 const SOCK={doi:'Ổ đôi',don:'Ổ đơn'};
 
@@ -369,7 +370,7 @@ function migrate(o){ // v2 (khoảng cách từng điểm) → v3 (chiều dài 
  o.library.forEach(d=>{if(d.price==null)d.price=0;});
  return o;
 }
-function normalize(o){o.settings={...DEF_SET,...(o.settings||{})};o.settings.mount={...DEF_MOUNT,...((o.settings||{}).mount||{})};o.prices=o.prices||{};return migrate(o);}
+function normalize(o){o.settings={...DEF_SET,...(o.settings||{})};if(+o.settings.verQ!==4){o.settings.lightPE=1;o.settings.qtyMode='vnk';o.settings.verQ=4;}o.settings.mount={...DEF_MOUNT,...((o.settings||{}).mount||{})};o.prices=o.prices||{};return migrate(o);}
 function fresh(){const lib=defLib();return normalize({library:lib,project:sampleProject(lib),prices:{}});}
 function load(){
  try{const t=localStorage.getItem(KEY);if(t){const o=JSON.parse(t);if(hasCircuits(o))return normalize(o);}}catch(e){}
@@ -412,40 +413,45 @@ function routeOf(c,lib){
  const st=ST(),Ht=hRoute(c.route),vTu=Math.abs(Ht-+st.Htu),v=k=>Math.abs(Ht-hMount(k));
  const segs=[],acc={plates:{},lamps:[],sockets:[],jb:0,dbox:0,powSw:0,lampPts:0,pts:0};let far=0;
  const pe=(c.type==='light'&&!+st.lightPE)?0:1,Lp=Math.max(0,+c.Lplan||0);
- const add=(name,L,n,ends,panel,vert)=>segs.push({name,L:Math.max(0,L),n,ends,panel:panel||0,vert:vert||0});
+ const wallMat=(c.pipe==='HDPE'||c.pipe==='EMT')?c.pipe:'PVC';
+ const add=(name,L,n,ends,panel,vert,mat)=>segs.push({name,L:Math.max(0,L),n,ends,panel:panel||0,vert:vert||0,mat:mat||c.pipe||'PVC'});
  const items=c.items.filter(it=>lib[it.devId]);
  if(!items.length)return {segs,acc,far:0};
  if(c.type==='light'){
+  // Theo phương pháp VNK: dây pha xuống công tắc (1 dây cấp + 1 dây điều khiển/hạt); N, PE đi thẳng tới đèn;
+  // mỗi đèn: 2 × (đoạn thả + 0,2m) – đèn trên trần dùng ống mềm (ruột gà)
   const plates={};items.forEach(it=>{const k=(it.plate||'CT?').trim()||'CT?';(plates[k]=plates[k]||[]).push(it);});
   const pl=Object.keys(plates).map(k=>{const its=plates[k],swm=its[0].swm||'sw';return {k,its,swm,vs:v(swm)};});
-  const nPl=pl.length,radial=c.topo==='radial'&&nPl>1;
-  let vert=(radial?nPl:1)*vTu,ends=0,lampV=0,nl=0;
-  pl.forEach(p=>{vert+=2*p.vs;ends+=2;
-   acc.plates[p.k]={n:p.its.length,types:p.its.map(i=>i.swType||'c1'),fan:p.its.map(i=>/quạt/i.test(lib[i.devId].name)),wet:p.its.some(i=>i.swWet)};
-   p.its.forEach(it=>{const d=lib[it.devId],q=Math.max(1,+it.qty||1);lampV+=q*v(it.mount||d.mount);nl+=q;acc.lamps.push({name:d.name,q,id:d.id});});});
-  if(!radial&&nPl>1){acc.jb+=nPl;ends+=2*nPl;vert+=nPl*(+st.brOff||0);}
-  acc.lampPts=nl;acc.pts=nPl+nl;ends+=nl;
-  add('Tuyến 2 sợi (tủ → công tắc → đèn): mặt bằng '+fmt(Lp)+'m + đi đứng',Lp+vert+lampV,[1,1,pe],ends,radial?nPl:1,vert+lampV);
-  // công tắc 2 chiều: đoạn 3 sợi
+  const nPl=pl.length,radial=c.topo==='radial'&&nPl>1,vT=(radial?nPl:1)*vTu,br=(!radial&&nPl>1)?nPl*(+st.brOff||0):0;
+  pl.forEach(p=>{acc.plates[p.k]={n:p.its.length,types:p.its.map(i=>i.swType||'c1'),fan:p.its.map(i=>/quạt/i.test(lib[i.devId].name)),wet:p.its.some(i=>i.swWet)};});
+  if(!radial&&nPl>1)acc.jb+=nPl;
+  add('Trục L+N'+(pe?'+PE':'')+': mặt bằng '+fmt(Lp)+'m + tủ → tuyến '+fmt(vT)+'m'+(br?' + rẽ nhánh '+fmt(br)+'m':''),Lp+vT+br,[1,1,pe],radial?nPl:(nPl>1?2*nPl:0),radial?nPl:1,vT);
+  pl.forEach(p=>{const k=p.its.length;add('Xuống bảng '+p.k+' ('+k+' hạt): 1 dây cấp + '+k+' dây điều khiển',p.vs,[1+k,0,0],1,0,p.vs,wallMat);});
+  let nl=0,maxVl=0;
+  pl.forEach(p=>p.its.forEach(it=>{const d=lib[it.devId],q=Math.max(1,+it.qty||1),mk=it.mount||d.mount,vl=v(mk),len=q*2*(vl+0.2);
+   nl+=q;maxVl=Math.max(maxVl,vl);acc.lamps.push({name:d.name,q,id:d.id});
+   add('Đèn: '+q+' × '+d.name+' – 2 × ('+fmt(vl)+' + 0,2)m',len,[1,1,pe],0,0,len,mk==='ceil'?'RG':wallMat);}));
+  acc.lampPts=nl;acc.pts=nPl+nl;
   const c2=items.filter(i=>i.swType==='c2');
   if(c2.length){
-   // gom theo bảng: mỗi bảng có hạt 2 chiều → 1 bảng công tắc thứ 2 (cùng số hạt 2 chiều)
    const byPl={};c2.forEach(i=>{const k=(i.plate||'CT?').trim();byPl[k]=(byPl[k]||0)+1;});
    let v3=0;Object.entries(byPl).forEach(([k,n])=>{const swm=plates[k][0].swm||'sw';v3+=2*v(swm);acc.plates[k+' (vị trí 2)']={n,types:Array(n).fill('c2'),fan:Array(n).fill(false),wet:plates[k].some(i=>i.swWet),second:true};acc.pts++;});
-   add('Đoạn 3 sợi giữa 2 công tắc 2 chiều: mặt bằng '+fmt(+c.L3||0)+'m + đi đứng',(+c.L3||0)+v3,[3,0,0],2*Object.keys(byPl).length,0,v3);
+   add('Đoạn 3 sợi giữa 2 công tắc 2 chiều: mặt bằng '+fmt(+c.L3||0)+'m + đi đứng',(+c.L3||0)+v3,[3,0,0],2*Object.keys(byPl).length,0,v3,wallMat);
    if(!(+c.L3>0))acc.warnL3=true;
   }
-  far=(Lp+vert+lampV)/2; // tải phân bố đều dọc tuyến → chiều dài tương đương ≈ ½
+  far=(Lp+vT)/2+Math.max(...pl.map(p=>p.vs))+maxVl;
  }else if(c.type==='socket'){
   const n=items.length;let vert=0,ends=0,panel=1;
   items.forEach(it=>acc.sockets.push({n:Math.max(1,+it.nSock||1),type:it.sockType||'doi',wet:!!it.wet}));
   const vs=items.map(it=>v(it.mount));
   if(c.topo==='radial'){vert=n*vTu+vs.reduce((a,x)=>a+x,0);ends=n;panel=n;far=Lp/n+vTu+Math.max(...vs);}
+  else if(c.topo==='drop1'){ // TH1: từ trục xuống 1 lần tới ổ thấp nhất rồi đi ngang qua các ổ
+   const hs=items.map(it=>hMount(it.mount)),hl=Math.min(...hs);vert=vTu+Math.abs(Ht-hl)+hs.reduce((a,h)=>a+2*(h-hl),0);ends=2*n-1;far=(Lp+vert)/2;}
   else if(c.topo==='ring'){vert=2*vTu+2*vs.reduce((a,x)=>a+x,0);ends=2*n;panel=2;}
   else{vert=vTu+2*vs.reduce((a,x)=>a+x,0)-vs[n-1];ends=2*n-1;} // nối tiếp từ ổ này sang ổ kia
   acc.pts=n;
   add('Tuyến 3 sợi: mặt bằng '+fmt(Lp)+'m + đi đứng',Lp+vert,[1,1,pe],ends,panel,vert);
-  if(c.topo==='ring')far=(Lp+vert)/4;else if(c.topo!=='radial')far=(Lp+vert)/2; // tải phân bố: ½ chiều dài (vòng: ¼ do cấp 2 phía)
+  if(c.topo==='ring')far=(Lp+vert)/4;else if(c.topo==='branch')far=(Lp+vert)/2; // tải phân bố: ½ chiều dài (vòng: ¼ do cấp 2 phía)
  }else{
   const it=items[0],d=lib[it.devId],hd=hMount(it.mount||d.mount);let vert,ends;
   if(it.sw){vert=vTu+v('swPow')+Math.abs(hMount('swPow')-hd);ends=3;acc.powSw++;acc.pts=2;add('Tủ → công tắc công suất → thiết bị: mặt bằng '+fmt(Lp)+'m + '+fmt(+st.swGap)+'m + đi đứng',Lp+(+st.swGap||0)+vert,[1,1,pe],ends,1,vert);}
@@ -486,17 +492,17 @@ function calcCircuit(c,lib){
  r.S=r.cab.S;r.PE=r.S;r.du=r.cab.du;
  if(r.cab.upDU)r.msgs.push(['i','Tăng tiết diện do sụt áp']);
  if(ring)r.msgs.push(['i','Mạch vòng: khả năng tải dây ×'+fmt(st.kRing)+'; sụt áp tính ½ dòng, ¼ chiều dài vòng (tải phân bố)']);
- const wst=1+(+st.waste||0)/100,dp=1+(+st.dpOng||0)/100,mat=c.pipe||'PVC';
+ const wst=1+(+st.waste||0)/100,dp=1+(+st.dpOng||0)/100,vnk=st.qtyMode==='vnk',Kd=+st.Kd||1,Ko=c.type==='light'?(+st.KoL||1):(+st.KoS||1);
  r.wire={L:0,N:0,PE:0};r.pipes={};r.segs=[];
  for(const g of r.route.segs){
-  const nw=g.n[0]+g.n[1]+g.n[2],cd=pickConduit(r.S,nw,mat),Lc=g.L*dp;
-  const w=[0,1,2].map(i=>(Lc*g.n[i]+g.n[i]*g.ends*(+st.chuaBox)+g.n[i]*g.panel*(+st.chuaTu))*wst);
+  const mat=g.mat||c.pipe||'PVC',nw=g.n[0]+g.n[1]+g.n[2],cd=pickConduit(r.S,nw,mat),Lc=g.L*(vnk?Ko:dp);
+  const w=[0,1,2].map(i=>vnk?g.L*g.n[i]*Kd:(Lc*g.n[i]+g.n[i]*g.ends*(+st.chuaBox)+g.n[i]*g.panel*(+st.chuaTu))*wst);
   r.wire.L+=w[0];r.wire.N+=w[1];r.wire.PE+=w[2];
-  r.pipes[cd.size]=(r.pipes[cd.size]||0)+Lc;
-  r.segs.push({...g,Lc,size:cd.size,fillPct:cd.fillPct,w});
+  const pk=mat+'|'+cd.size;r.pipes[pk]=(r.pipes[pk]||0)+Lc;
+  r.segs.push({...g,mat,Lc,size:cd.size,fillPct:cd.fillPct,w});
   if(cd.over)r.msgs.push(['e','Quá nhiều dây cho ống lớn nhất']);
  }
- r.mat=mat;r.elb=Math.ceil((r.route.acc.pts||0)*(+st.elbowPerPt||0))+2;
+ r.elb=Math.ceil((r.route.acc.pts||0)*(+st.elbowPerPt||0))+2;
  return r;
 }
 
@@ -600,7 +606,7 @@ function bom(R,only){
    const c=r.c,cn=nm+' / '+c.name;
    if(r.In)add('A',r.cb,'Cái',1,nm);
    if(r.S){['L','N','PE'].forEach(k=>add('C',N.wire(r.S,k),'m',r.wire[k],cn));
-    for(const sz in r.pipes)pipeFit(r.mat,sz,r.pipes[sz],Object.keys(r.pipes).length?Math.ceil(r.elb*r.pipes[sz]/Object.values(r.pipes).reduce((a,x)=>a+x,0)):0,cn);
+    {const pls=pipeList(r),rig=pls.filter(p=>p.mat==='PVC'||p.mat==='EMT'),tr=rig.reduce((a,p)=>a+p.m,0);pls.forEach(p=>pipeFit(p.mat,p.sz,p.m,rig.includes(p)&&tr?Math.ceil(r.elb*p.m/tr):0,cn));}
     cos(r.S,(c.topo==='ring'?2:1)*(c.type==='light'&&!+st.lightPE?2:3),nm);}
    const A=r.route?r.route.acc:null;if(!A)continue;
    if(A.jb)add('E','Hộp nối dây (hộp chia ngã)','Cái',A.jb,cn);
@@ -665,6 +671,8 @@ function devSelect(k,cur,attrs,kind){
 }
 const mountOpts=g=>{const o={};mountsOf(g).forEach(m=>o[m[0]]=m[1]+' ('+fmt(hMount(m[0]))+'m)');return o;};
 const phBadge=p=>'<span class="ph ph'+p+'">'+p+'</span>';
+const pipeList=r=>r.pipes?Object.entries(r.pipes).map(([k,m])=>{const [mat,sz]=k.split('|');return {mat,sz,m};}):[];
+const pipeTxt=(r,sep)=>pipeList(r).map(p=>PIPE[p.mat]+' '+p.sz+' '+fmt(p.m,1)+'m').join(sep||', ');
 const priceOf=name=>{const d=S.library.find(x=>x.name===name);if(d&&+d.price>0)return +d.price;return +((S.prices||{})[name]||0);};
 
 /* =========================================================
@@ -678,12 +686,12 @@ function renderCircuit(b,r){
   '<label class="i" title="Tên layer trên AutoCAD – dùng để dán chiều dài tự động">Layer '+inp('c.ly.'+c.id,c.layer,'data-f="c.layer" '+A(ids),100)+'</label>'+
   '<label class="i" title="Tổng chiều dài polyline của mạch trên mặt bằng (đo theo layer)"><b>Mặt bằng (m)</b> '+num('c.lp.'+c.id,c.Lplan,'data-f="c.Lplan" '+A(ids),0.5,64)+'</label>'+
   (hasC2?'<label class="i" title="Chiều dài mặt bằng đoạn 3 sợi giữa 2 công tắc 2 chiều (layer '+esc(c.layer)+'-3S)">Đoạn 3 sợi (m) '+num('c.l3.'+c.id,c.L3,'data-f="c.L3" '+A(ids),0.5,56)+'</label>':'')+
-  (TOPO_OK[c.type].length>1?'<label class="i">Kiểu đấu '+sel('c.t.'+c.id,c.topo,Object.fromEntries(TOPO_OK[c.type].map(t=>[t,TOPO[t]])),'data-f="c.topo" '+A(ids))+'</label>':'')+
+  (TOPO_OK[c.type].length>1?'<label class="i">Kiểu đấu '+sel('c.t.'+c.id,c.topo,Object.fromEntries(TOPO_OK[c.type].map(t=>[t,c.type==='light'&&t==='branch'?'Phân nhánh (trục)':TOPO[t]])),'data-f="c.topo" '+A(ids))+'</label>':'')+
   '<label class="i">Tuyến '+sel('c.r.'+c.id,c.route,ROUTE,'data-f="c.route" '+A(ids),190)+'</label>'+
   '<label class="i">Ống '+sel('c.p.'+c.id,c.pipe||'PVC',PIPE,'data-f="c.pipe" '+A(ids))+'</label>'+
   '<span style="flex:1"></span><button class="sm noprint" data-act="dupC" '+A(ids)+'>Nhân bản</button><button class="sm del noprint" data-act="delC" '+A(ids)+'>Xóa</button></div>'+
   '<div class="cb"><div class="sum" style="margin-bottom:6px">'+status(r.msgs)+'<span>P = <b>'+fmt(r.P,0)+' W</b></span><span>Itt = <b>'+fmt(r.Ib,2)+' A</b></span><span>CB: <b>'+esc(r.cb||'—')+'</b></span><span>Dây: <b>'+(r.S?'CV '+fmt(r.S)+'mm²':'—')+'</b></span>'+
-  '<span>Ống: <b>'+(r.pipes?Object.entries(r.pipes).map(([s,m])=>PIPE[r.mat]+' '+s+' '+fmt(m,1)+'m').join(', '):'—')+'</b></span><span>Dây L/N/PE: <b>'+(r.wire?fmt(r.wire.L,0)+'/'+fmt(r.wire.N,0)+'/'+fmt(r.wire.PE,0)+' m':'—')+'</b></span><span>ΔU: <b>'+fmt(r.du,2)+'%</b> (tổng '+fmt(r.duTot,2)+'%)</span></div><div class="tw"><table>';
+  '<span>Ống: <b>'+(r.pipes?pipeTxt(r):'—')+'</b></span><span>Dây L/N/PE: <b>'+(r.wire?fmt(r.wire.L,0)+'/'+fmt(r.wire.N,0)+'/'+fmt(r.wire.PE,0)+' m':'—')+'</b></span><span>ΔU: <b>'+fmt(r.du,2)+'%</b> (tổng '+fmt(r.duTot,2)+'%)</span></div><div class="tw"><table>';
  const del=it=>'<td class="noprint c"><button class="sm del" data-act="delI" '+A({...ids,i:it.id})+'>✕</button></td>';
  if(c.type==='light'){
   h+='<thead><tr><th>Bảng CT</th><th>Đèn / quạt</th><th class="n">SL</th><th>Vị trí lắp</th><th>Hạt công tắc</th><th>Cao độ công tắc</th><th class="c">CT chống nước</th><th class="n">P (W)</th><th class="noprint"></th></tr></thead><tbody>';
@@ -764,7 +772,7 @@ function renderSLD(R){
  R.boards.forEach(rb=>{const b=rb.b;
   h+='<div class="br"><div class="vline"></div><div style="font-size:11px;color:var(--mute);text-align:center">'+esc(rb.cb||'')+'<br>'+esc(rb.wire||'')+' – '+fmt(b.len)+'m</div><div class="vline"></div>'+
    '<div class="box">'+(three?phBadge(b.phase||'A')+' ':'')+'<h4 style="display:inline">'+esc(b.name)+'</h4><div style="font-size:11.5px">'+rb.encl+' module · CB đầu tủ '+esc(rb.cb||'—')+'<br>Ptt = '+fmt(rb.Pd/1000,2)+' × '+fmt(b.kdt)+' = '+fmt(rb.Ptt/1000,2)+' kW</div></div><ul>'+
-   rb.circuits.map(r=>'<li class="'+r.c.type+'"><b>'+esc(r.cb||'—')+'</b> · 2CV('+fmt(r.S)+')'+(r.c.type==='light'&&!+st.lightPE?'':' + E('+fmt(r.S)+')')+' / '+(r.pipes?Object.keys(r.pipes).join(','):'')+'<br>'+esc(r.c.name)+' – '+fmt(r.P/1000,2)+' kW</li>').join('')+'</ul></div>';
+   rb.circuits.map(r=>'<li class="'+r.c.type+'"><b>'+esc(r.cb||'—')+'</b> · 2CV('+fmt(r.S)+')'+(r.c.type==='light'&&!+st.lightPE?'':' + E('+fmt(r.S)+')')+' / '+pipeList(r).map(p=>p.sz).filter((x,i,a)=>a.indexOf(x)===i).join(',')+'<br>'+esc(r.c.name)+' – '+fmt(r.P/1000,2)+' kW</li>').join('')+'</ul></div>';
  });
  return h+'</div><div class="legend">Viền vàng: chiếu sáng – xanh lá: ổ cắm – cam: mạch riêng. Ghi theo kiểu bản vẽ: 2CV(S) + E(S) / ống.</div></div></div></div>';
 }
@@ -778,7 +786,7 @@ function resultRows(R){
  rows.push(['Tủ tổng','CB tổng cả nhà','','',fmt(M.Pd,0),fmt(M.Ptt,0),fmt(M.cos,2),fmt(M.Ib,2),M.cb||'',M.wire||'',PIPE[st.mainPipe]+' '+(M.conduit||''),fmt(M.du,2),'',(M.msgs||[]).map(m=>m[1]).join('; ')]);
  R.boards.forEach(rb=>{
   rows.push(['Tủ tổng → '+rb.b.name,'CB nhánh / cáp trục','','',fmt(rb.Pd,0),fmt(rb.Ptt,0),fmt(rb.cos,2),fmt(rb.Ib,2),rb.cb||'',rb.wire||'',rb.conduit||'',fmt(rb.du,2),'',rb.msgs.map(m=>m[1]).join('; ')]);
-  rb.circuits.forEach(r=>rows.push([rb.b.name,r.c.name,CTYPE[r.c.type],r.c.type==='direct'?'Hình tia':TOPO[r.c.topo],fmt(r.Pd,0),fmt(r.P,0),fmt(r.cos,2),fmt(r.Ib,2),r.cb||'',r.S?'2CV('+fmt(r.S)+')'+(r.c.type==='light'&&!+st.lightPE?'':' + E('+fmt(r.S)+')'):'',r.pipes?PIPE[r.mat]+' '+Object.keys(r.pipes).join(', '):'',fmt(r.du,2),fmt(r.duTot,2),r.msgs.filter(m=>m[0]!=='i').map(m=>m[1]).join('; ')]));
+  rb.circuits.forEach(r=>rows.push([rb.b.name,r.c.name,CTYPE[r.c.type],r.c.type==='direct'?'Hình tia':(r.c.type==='light'&&r.c.topo==='branch'?'Phân nhánh':TOPO[r.c.topo]),fmt(r.Pd,0),fmt(r.P,0),fmt(r.cos,2),fmt(r.Ib,2),r.cb||'',r.S?'2CV('+fmt(r.S)+')'+(r.c.type==='light'&&!+st.lightPE?'':' + E('+fmt(r.S)+')'):'',r.pipes?pipeList(r).map(p=>PIPE[p.mat]+' '+p.sz).join(', '):'',fmt(r.du,2),fmt(r.duTot,2),r.msgs.filter(m=>m[0]!=='i').map(m=>m[1]).join('; ')]));
  });
  return rows;
 }
@@ -792,17 +800,17 @@ function renderResult(R){
    KHỐI LƯỢNG DÂY – ỐNG
    ========================================================= */
 const QTY_HDR=['Tủ','Mạch','Layer','Đoạn','Mặt bằng + đi đứng (m)','Trong đó đi đứng (m)','Ống + dự phòng (m)','Loại – cỡ ống','Lấp đầy (%)','Sợi L/N/PE','Dây L (m)','Dây N (m)','Dây PE (m)'];
-function qtyRows(R){const rows=[];R.boards.forEach(rb=>rb.circuits.forEach(r=>{if(!r.segs)return;r.segs.forEach(g=>rows.push([rb.b.name,r.c.name,r.c.layer,g.name,+g.L.toFixed(2),+g.vert.toFixed(2),+g.Lc.toFixed(2),PIPE[r.mat]+' '+g.size,+g.fillPct.toFixed(0),g.n.join('/'),+g.w[0].toFixed(1),+g.w[1].toFixed(1),+g.w[2].toFixed(1)]));}));return rows;}
+function qtyRows(R){const rows=[];R.boards.forEach(rb=>rb.circuits.forEach(r=>{if(!r.segs)return;r.segs.forEach(g=>rows.push([rb.b.name,r.c.name,r.c.layer,g.name,+g.L.toFixed(2),+g.vert.toFixed(2),+g.Lc.toFixed(2),PIPE[g.mat]+' '+g.size,+g.fillPct.toFixed(0),g.n.join('/'),+g.w[0].toFixed(1),+g.w[1].toFixed(1),+g.w[2].toFixed(1)]));}));return rows;}
 function renderQty(R){
  const st=ST();
- let h='<div class="card"><div class="hd"><h3>Khối lượng dây – ống theo mạch</h3><span class="hint">Ống = (mặt bằng + đi đứng theo cao độ) × (1 + '+st.dpOng+'%). Dây = ống × số sợi + chừa '+fmt(st.chuaBox)+' m/sợi tại mỗi đế/hộp + '+fmt(st.chuaTu)+' m/sợi tại tủ, rồi × (1 + '+st.waste+'%).</span></div><div class="bd tw">'+
+ let h='<div class="card"><div class="hd"><h3>Khối lượng dây – ống theo mạch</h3><span class="hint">'+(st.qtyMode==='vnk'?'Kiểu VNK: khối lượng = (mặt bằng + mặt đứng) × hệ số; dây × Kd '+fmt(st.Kd)+'; ống × Ko '+fmt(st.KoL)+' (chiếu sáng) / '+fmt(st.KoS)+' (ổ cắm, mạch riêng).':'Kiểu chi tiết: ống = (mặt bằng + đi đứng) × (1 + '+st.dpOng+'%); dây = ống × số sợi + chừa '+fmt(st.chuaBox)+' m/sợi tại đế/hộp + '+fmt(st.chuaTu)+' m/sợi tại tủ, × (1 + '+st.waste+'%).')+'</span></div><div class="bd tw">'+
   '<table><thead><tr><th>Tủ</th><th>Mạch</th><th>Layer</th><th>Kiểu đấu · tuyến</th><th class="n">Mặt bằng (m)</th><th class="n">Đi đứng (m)</th><th>Ống (m)</th><th>Tiết diện</th><th class="n">Dây L (m)</th><th class="n">Dây N (m)</th><th class="n">Dây PE (m)</th></tr></thead><tbody>';
  const tot={};
  R.boards.forEach(rb=>rb.circuits.forEach(r=>{if(!r.segs)return;
   const k=r.S;tot[k]=tot[k]||{L:0,N:0,PE:0};tot[k].L+=r.wire.L;tot[k].N+=r.wire.N;tot[k].PE+=r.wire.PE;
   const vert=r.segs.reduce((a,g)=>a+g.vert,0);
-  h+='<tr><td>'+esc(rb.b.name)+'</td><td><b>'+esc(r.c.name)+'</b></td><td>'+esc(r.c.layer)+'</td><td>'+(r.c.type==='direct'?'Hình tia':TOPO[r.c.topo])+' · '+ROUTE[r.c.route]+'</td>'+
-   '<td class="n">'+fmt((+r.c.Lplan||0)+(+r.c.L3||0),1)+'</td><td class="n">'+fmt(vert,1)+'</td><td>'+Object.entries(r.pipes).map(([s,m])=>PIPE[r.mat]+' '+s+': '+fmt(m,1)).join('<br>')+'</td><td>CV '+fmt(r.S)+' mm²</td>'+
+  h+='<tr><td>'+esc(rb.b.name)+'</td><td><b>'+esc(r.c.name)+'</b></td><td>'+esc(r.c.layer)+'</td><td>'+(r.c.type==='direct'?'Hình tia':(r.c.type==='light'&&r.c.topo==='branch'?'Phân nhánh':TOPO[r.c.topo]))+' · '+ROUTE[r.c.route]+'</td>'+
+   '<td class="n">'+fmt((+r.c.Lplan||0)+(+r.c.L3||0),1)+'</td><td class="n">'+fmt(vert,1)+'</td><td>'+pipeTxt(r,'<br>')+'</td><td>CV '+fmt(r.S)+' mm²</td>'+
    '<td class="n">'+fmt(r.wire.L,1)+'</td><td class="n">'+fmt(r.wire.N,1)+'</td><td class="n">'+fmt(r.wire.PE,1)+'</td></tr>';
  }));
  h+='</tbody></table></div></div>';
@@ -897,6 +905,7 @@ function setCtl(k,t,st){
  if(t==='cbmax')return sel('s.'+k,st[k],Object.fromEntries([40,50,63,80,100].map(x=>[x,x])),at);
  if(t==='yn')return sel('s.'+k,+st[k]?1:0,{1:'Có / áp dụng',0:'Không'},at);
  if(t==='cable')return sel('s.'+k,st[k],{CXV:'CXV (Cu/XLPE/PVC)',CVV:'CVV (Cu/PVC/PVC)'},'data-f="sTxt" data-s="'+k+'"');
+ if(t==='qmode')return sel('s.'+k,st[k],{vnk:'Hệ số gộp (VNK): dây × Kd, ống × Ko',detail:'Chi tiết: dự phòng + chừa đấu nối + hao hụt'},'data-f="sTxt" data-s="'+k+'"');
  if(t==='pipe')return sel('s.'+k,st[k],PIPE,'data-f="sTxt" data-s="'+k+'"');
  return num('s.'+k,st[k],at,t);
 }
@@ -934,6 +943,8 @@ function renderHelp(){
  '<tr><td><b>Mạch vòng</b></td><td>Từ CB qua tất cả ổ rồi quay về chính CB đó.</td><td>Tủ → trục 2 lần (đi + về); mỗi ổ xuống + lên.</td><td>Ổ cắm phòng khách, bếp.</td></tr>'+
  '<tr><td><b>Hình tia</b></td><td>Đường dây độc lập từ tủ tới từng điểm.</td><td>Mỗi điểm: tủ → trục + trục → điểm.</td><td>Điều hòa, bình nóng lạnh, bếp từ, bơm.</td></tr></table>'+
  '<p class="hint">Cao độ trục theo tuyến: trên trần BT '+fmt(st.Hc)+'m, trên trần giả '+fmt(+st.Hf||st.Hc)+'m, trục tường '+fmt(st.Htruc)+'m, âm sàn / ngầm đất 0m. Đèn trên trần giả khi trục đi trên trần BT: thả '+fmt(st.Hc-(+st.Hf||st.Hc))+'m.</p>'+
+ '<h3>3b. Phương pháp bóc theo VNK (mặc định)</h3><p>Khối lượng = (mặt bằng + mặt đứng) × hệ số. Mạch chiếu sáng: <b>dây pha</b> = trục + mỗi bảng công tắc (1 dây cấp + 1 dây điều khiển/hạt) × đoạn xuống công tắc + mỗi đèn 2 × (đoạn thả + 0,2m); <b>dây N, PE</b> = trục + đoạn xuống đèn (không đi xuống công tắc). Đoạn thả xuống đèn trên trần dùng <b>ống mềm</b>, còn lại ống cứng. Dây × Kd (1,2); ống × Ko (1,1 chiếu sáng; 1,05 ổ cắm). Ổ cắm có 3 trường hợp: TH1 xuống 1 lần rồi đi ngang; TH2 từ trần xuống từng ổ; TH3 từ tủ xuống sàn rồi sang ổ (chọn "Nối tiếp" + tuyến âm sàn).</p>'+
+ '<p class="hint">Khác VNK có chủ đích: đoạn tủ → tuyến lấy (cao trục − cao tủ) thay cho cả chiều cao H; ống đoạn xuống công tắc tính 1 ống/bảng (dây cấp và dây điều khiển đi chung ống) thay cho (số công tắc + số hạt) ống. Muốn tính theo kiểu dự phòng + chừa + hao hụt thì đổi "Cách tính hệ số" sang Chi tiết.</p>'+
  '<h3>4. Đơn giá</h3><p>Tab Thư viện → "Vật tư &amp; đơn giá": danh mục chuẩn (aptomat, dây theo màu, cáp, ống & phụ kiện, công tắc, ổ cắm, tủ, tiếp địa…). Nhập giá 1 lần, dùng cho mọi dự án; xuất/nhập .csv để chia sẻ bảng giá. Giá đèn – quạt nhập ở bảng Thiết bị điện.</p>'+
  '<h3>5. Lưu ý</h3><ul><li>Bản vẽ thiết kế (không phải shopdrawing) nên khối lượng mang tính ước lượng.</li><li>Điện 1 pha: CB tổng ≤ CB điện lực ('+st.cbMax1P+'A); app tính sẵn k_đt toàn nhà tối đa.</li>'+
  '<li>Tham chiếu: TCVN 9206:2012, TCVN 9207:2012, TCVN 7447 (IEC 60364). Kết quả cần kỹ sư kiểm tra lại.</li></ul></div></div>';
